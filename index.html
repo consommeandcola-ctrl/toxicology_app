@@ -74,6 +74,9 @@
                     </button>
                 </div>
             </div>
+            <p id="datasetStatus" class="mt-3 text-xs text-slate-500">
+                外部データセット: 読み込み中...
+            </p>
         </section>
 
         <section class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
@@ -268,9 +271,11 @@
                     }
                 };
 
+                this.datasetLoaded = false;
                 this.bindEvents();
                 this.populateDrugCandidates();
                 this.renderSymptomChips();
+                this.loadExternalOtcDataset();
             }
 
             bindEvents() {
@@ -287,6 +292,122 @@
                     if (!button) return;
                     this.removeEntry(Number(button.dataset.removeId));
                 });
+            }
+
+            setDatasetStatus(message, tone = "info") {
+                const statusEl = document.getElementById("datasetStatus");
+                if (!statusEl) return;
+                statusEl.textContent = message;
+
+                statusEl.classList.remove("text-slate-500", "text-green-700", "text-amber-700");
+                if (tone === "success") {
+                    statusEl.classList.add("text-green-700");
+                } else if (tone === "warn") {
+                    statusEl.classList.add("text-amber-700");
+                } else {
+                    statusEl.classList.add("text-slate-500");
+                }
+            }
+
+            parseAmountToken(amountText) {
+                const normalized = String(amountText || "")
+                    .replaceAll("％", "%")
+                    .replace(/\s+/g, " ")
+                    .trim();
+                const match = normalized.match(/^([0-9]+(?:\.[0-9]+)?)\s*(mg|g|ml|mL|μg|µg|mcg|%|IU|単位|国際単位|mEq)$/i);
+                if (!match) return null;
+                return {
+                    value: Number(match[1]),
+                    unit: match[2].toLowerCase()
+                };
+            }
+
+            calculateIngredientRatios(ingredients) {
+                const normalized = ingredients.map((item) => {
+                    const ingredient = String(item.name || "")
+                        .trim()
+                        .replace(/^[・\-]+/, "")
+                        .replace(/\s+/g, " ");
+                    const parsed = this.parseAmountToken(item.amount || "");
+                    return { ingredient, parsed };
+                }).filter((item) => item.ingredient);
+
+                if (normalized.length === 0) return [];
+
+                const parsedOnly = normalized.filter((item) => item.parsed && Number.isFinite(item.parsed.value) && item.parsed.value > 0);
+                const unitSet = new Set(parsedOnly.map((item) => item.parsed.unit));
+                const canWeighted = parsedOnly.length === normalized.length && unitSet.size === 1;
+
+                if (canWeighted) {
+                    const total = parsedOnly.reduce((sum, item) => sum + item.parsed.value, 0);
+                    if (total > 0) {
+                        return normalized.map((item) => ({
+                            ingredient: item.ingredient,
+                            ratio: item.parsed.value / total
+                        }));
+                    }
+                }
+
+                const equalRatio = 1 / normalized.length;
+                return normalized.map((item) => ({
+                    ingredient: item.ingredient,
+                    ratio: equalRatio
+                }));
+            }
+
+            buildUnknownIngredientInfo() {
+                return {
+                    component: "Unknown",
+                    toxicDoseMgKg: null,
+                    severeDoseMgKg: null,
+                    criticalDoseMgKg: null,
+                    symptoms: ["情報不足"],
+                    criticalSymptoms: [],
+                    antidote: { name: "要情報確認", indication: "製剤情報、成分、毒性データを至急確認" },
+                    lavage: { allow: false, windowMin: 0, note: "毒性不明のため慎重判断" },
+                    charcoal: { allow: false, windowMin: 0, extendedWindowMin: 0, note: "適応可否を確認" },
+                    dialysis: { effective: false, indication: "成分特性の確認が必要" },
+                    otherTreatments: [{ name: "中毒情報センターへ照会", severityMin: 1, note: "不明成分は一次情報を収集" }],
+                    unknown: true
+                };
+            }
+
+            async loadExternalOtcDataset() {
+                this.setDatasetStatus("外部データセットを読み込み中...");
+                try {
+                    const response = await fetch("data/pmda_otc_products.json", { cache: "no-store" });
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                    const payload = await response.json();
+                    const products = Array.isArray(payload.products) ? payload.products : [];
+                    let addedProducts = 0;
+                    let addedIngredients = 0;
+
+                    products.forEach((product) => {
+                        const productName = String(product.product_name || "").trim();
+                        const sourceIngredients = Array.isArray(product.ingredients) ? product.ingredients : [];
+                        const ratioDefs = this.calculateIngredientRatios(sourceIngredients);
+                        if (!productName || ratioDefs.length === 0) return;
+
+                        if (!this.productDB[productName]) {
+                            this.productDB[productName] = ratioDefs;
+                            addedProducts += 1;
+                        }
+
+                        ratioDefs.forEach((item) => {
+                            if (!this.ingredientDB[item.ingredient]) {
+                                this.ingredientDB[item.ingredient] = this.buildUnknownIngredientInfo();
+                                addedIngredients += 1;
+                            }
+                        });
+                    });
+
+                    this.populateDrugCandidates();
+                    this.datasetLoaded = true;
+                    this.setDatasetStatus(`PMDAデータ読込完了: 製品 ${addedProducts} 件 / 新規成分 ${addedIngredients} 件`, "success");
+                } catch (error) {
+                    this.setDatasetStatus("外部データセットを読み込めませんでした（内蔵データのみ利用）", "warn");
+                }
             }
 
             renderSymptomChips() {
@@ -434,21 +555,7 @@
             getIngredientInfo(ingredientName) {
                 const matchedKey = this.findKeyByNormalizedName(this.ingredientDB, ingredientName);
                 if (matchedKey) return this.ingredientDB[matchedKey];
-
-                return {
-                    component: "Unknown",
-                    toxicDoseMgKg: null,
-                    severeDoseMgKg: null,
-                    criticalDoseMgKg: null,
-                    symptoms: ["情報不足"],
-                    criticalSymptoms: [],
-                    antidote: { name: "要情報確認", indication: "製剤情報、成分、毒性データを至急確認" },
-                    lavage: { allow: false, windowMin: 0, note: "毒性不明のため慎重判断" },
-                    charcoal: { allow: false, windowMin: 0, extendedWindowMin: 0, note: "適応可否を確認" },
-                    dialysis: { effective: false, indication: "成分特性の確認が必要" },
-                    otherTreatments: [{ name: "中毒情報センターへ照会", severityMin: 1, note: "不明成分は一次情報を収集" }],
-                    unknown: true
-                };
+                return this.buildUnknownIngredientInfo();
             }
 
             classifySeverity(doseMgKg, ingredientInfo) {
