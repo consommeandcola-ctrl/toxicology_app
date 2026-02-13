@@ -261,6 +261,8 @@ def build_products(rows: List[Dict[str, str]]) -> List[Dict[str, object]]:
         generic_name = normalize_text(row.get("一般名", ""))
         product_name = normalize_text(row.get("販売名", ""))
         manufacturer = normalize_text(row.get("製造販売業者等", ""))
+        product_name = product_name.lstrip(",， ").strip()
+        manufacturer = manufacturer.lstrip(",， ").strip()
         document_field = row.get("添付文書", "")
         guide_field = row.get("患者向医薬品ガイド／ワクチン接種を受ける人へのガイド", "")
         interview_field = row.get("インタビューフォーム", "")
