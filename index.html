@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ToxicNavi - 中毒診療支援ツール ver.1.0.0 (2026/02/13 18:30)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .severity-high { background-color: #fee2e2; border-left: 4px solid #ef4444; }
+        .severity-mid { background-color: #fef3c7; border-left: 4px solid #f59e0b; }
+        .status-badge { @apply px-2 py-1 rounded text-xs font-bold; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen pb-20">
+
+    <header class="bg-slate-800 text-white p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold flex items-center gap-2">
+                🧪 ToxicNavi <span class="text-sm font-normal opacity-75">中毒診療支援</span>
+            </h1>
+            <div class="text-xs text-right">
+                患者体重: <input type="number" id="patientWeight" value="60" class="bg-slate-700 border-none rounded px-2 w-16"> kg
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 max-w-4xl">
+        <section class="mb-6 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <h2 class="text-lg font-bold mb-4 border-b pb-2">1. 摂取薬剤・量の入力</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <input type="text" id="drugInput" placeholder="薬剤名 (例: アセトアミノフェン)" class="border p-2 rounded">
+                <input type="number" id="amountInput" placeholder="摂取量 (mg)" class="border p-2 rounded">
+                <button onclick="app.addDrug()" class="bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition">
+                    リストに追加
+                </button>
+            </div>
+        </section>
+
+        <section class="mb-6">
+            <h2 class="text-lg font-bold mb-4">2. 優先順位・重症度推察 (自動ソート)</h2>
+            <div id="drugList" class="space-y-3">
+                <p class="text-slate-400 text-center py-10">薬剤を入力してください</p>
+            </div>
+        </section>
+
+        <section id="treatmentSection" class="hidden bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <h2 class="text-lg font-bold mb-4 border-b pb-2 text-red-600">3. 治療妥当性の検証マトリクス</h2>
+            <div id="treatmentDetails" class="space-y-6">
+                </div>
+        </section>
+    </main>
+
+    <script>
+        // [設計理由]: 複雑な医療ロジックとUIの状態を同期させるため、OOP(Class)による状態管理を採用。
+        
+        class ToxicNavi {
+            constructor() {
+                this.drugs = [];
+                this.patientWeight = 60;
+                // マスターデータ（本来は外部APIや膨大なJSONにする）
+                this.masterData = {
+                    "アセトアミノフェン": { comp: "Acetaminophen", toxicDose: 150, unit: "mg/kg", symptoms: "嘔気, 肝不全", antidote: "N-アセチルシステイン", charcoal: true, lavage: true, dialysis: false },
+                    "カフェイン": { comp: "Caffeine", toxicDose: 15, unit: "mg/kg", symptoms: "頻脈, 興奮, 不整脈", antidote: "なし(対症療法)", charcoal: true, lavage: true, dialysis: true },
+                    "ジアゼパム": { comp: "Diazepam", toxicDose: 0.5, unit: "mg/kg", symptoms: "意識障害, 呼吸抑制", antidote: "フルマゼニル", charcoal: true, lavage: false, dialysis: false }
+                };
+            }
+
+            addDrug() {
+                const name = document.getElementById('drugInput').value;
+                const amount = parseFloat(document.getElementById('amountInput').value);
+                this.patientWeight = parseFloat(document.getElementById('patientWeight').value);
+
+                if (!name || !amount) return alert("入力が不完全です");
+
+                const info = this.masterData[name] || { comp: "不明", toxicDose: 0, symptoms: "不明", unknown: true };
+                
+                // 重症度計算 (摂取量 / 体重)
+                const dosePerKg = amount / this.patientWeight;
+                const severityScore = info.toxicDose ? (dosePerKg / info.toxicDose) : 0;
+
+                this.drugs.push({
+                    name, amount, dosePerKg, info, severityScore
+                });
+
+                // 重症度順にソート
+                this.drugs.sort((a, b) => b.severityScore - a.severityScore);
+                
+                this.render();
+            }
+
+            render() {
+                const listEl = document.getElementById('drugList');
+                const treatEl = document.getElementById('treatmentSection');
+                const treatDetailEl = document.getElementById('treatmentDetails');
+                
+                listEl.innerHTML = "";
+                treatDetailEl.innerHTML = "";
+
+                if (this.drugs.length > 0) treatEl.classList.remove('hidden');
+
+                this.drugs.forEach((drug, index) => {
+                    const sevClass = drug.severityScore >= 1 ? 'severity-high' : 'severity-mid';
+                    
+                    // リスト表示
+                    listEl.innerHTML += `
+                        <div class="${sevClass} p-4 rounded shadow-sm flex justify-between items-center bg-white">
+                            <div>
+                                <span class="text-xs font-bold text-slate-500">No.${index + 1} 優先度高</span>
+                                <h3 class="font-bold text-lg">${drug.name} (${drug.info.comp})</h3>
+                                <p class="text-sm">予測症状: <span class="text-red-600">${drug.info.symptoms}</span></p>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-2xl font-black">${drug.dosePerKg.toFixed(1)}</div>
+                                <div class="text-xs">mg/kg 摂取</div>
+                            </div>
+                        </div>
+                    `;
+
+                    // 治療妥当性表示
+                    treatDetailEl.innerHTML += `
+                        <div class="border-l-4 border-slate-800 pl-4 mb-8">
+                            <h3 class="font-black text-xl mb-3 underline">${drug.name} の治療戦略</h3>
+                            <table class="w-full text-sm border-collapse">
+                                <tr class="border-b">
+                                    <td class="py-2 font-bold w-32">拮抗薬</td>
+                                    <td class="py-2">${drug.info.antidote || 'なし'}</td>
+                                </tr>
+                                <tr class="border-b">
+                                    <td class="py-2 font-bold text-blue-600">胃洗浄</td>
+                                    <td class="py-2">${drug.info.lavage ? '✅ 考慮（摂取1時間以内）' : '❌ 非推奨'}</td>
+                                </tr>
+                                <tr class="border-b">
+                                    <td class="py-2 font-bold text-green-600">活性炭</td>
+                                    <td class="py-2">${drug.info.charcoal ? '✅ 推奨' : '⚠️ 禁忌または効果薄'}</td>
+                                </tr>
+                                <tr class="border-b">
+                                    <td class="py-2 font-bold text-purple-600">血液浄化</td>
+                                    <td class="py-2">${drug.info.dialysis ? '✅ 適応検討（重症時）' : '❌ 効果なし'}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        const app = new ToxicNavi();
+    </script>
+</body>
+</html>
