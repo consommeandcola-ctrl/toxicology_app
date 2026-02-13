@@ -3,148 +3,749 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ToxicNavi - 中毒診療支援ツール ver.1.0.0 (2026/02/13 18:30)</title>
+    <title>ToxicNavi - 中毒診療フロー支援</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .severity-high { background-color: #fee2e2; border-left: 4px solid #ef4444; }
-        .severity-mid { background-color: #fef3c7; border-left: 4px solid #f59e0b; }
-        .status-badge { @apply px-2 py-1 rounded text-xs font-bold; }
+        .severity-critical { background: #7f1d1d; color: #fff; }
+        .severity-high { background: #dc2626; color: #fff; }
+        .severity-mid { background: #f59e0b; color: #fff; }
+        .severity-low { background: #0ea5e9; color: #fff; }
+        .severity-minimal { background: #16a34a; color: #fff; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900 min-h-screen pb-20">
-
-    <header class="bg-slate-800 text-white p-4 shadow-lg">
-        <div class="container mx-auto flex justify-between items-center">
+<body class="bg-slate-50 text-slate-900 min-h-screen pb-16">
+    <header class="bg-slate-800 text-white shadow-lg">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <h1 class="text-xl font-bold flex items-center gap-2">
-                🧪 ToxicNavi <span class="text-sm font-normal opacity-75">中毒診療支援</span>
+                <span>🧪 ToxicNavi</span>
+                <span class="text-sm font-normal opacity-80">薬剤中毒 初期診療ワークフロー</span>
             </h1>
-            <div class="text-xs text-right">
-                患者体重: <input type="number" id="patientWeight" value="60" class="bg-slate-700 border-none rounded px-2 w-16"> kg
-            </div>
+            <p class="text-xs text-amber-200">
+                教育・トレーニング用。実臨床では中毒情報センター/専門医コンサルトを優先してください。
+            </p>
         </div>
     </header>
 
-    <main class="container mx-auto p-4 max-w-4xl">
-        <section class="mb-6 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-            <h2 class="text-lg font-bold mb-4 border-b pb-2">1. 摂取薬剤・量の入力</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <input type="text" id="drugInput" placeholder="薬剤名 (例: アセトアミノフェン)" class="border p-2 rounded">
-                <input type="number" id="amountInput" placeholder="摂取量 (mg)" class="border p-2 rounded">
-                <button onclick="app.addDrug()" class="bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition">
-                    リストに追加
-                </button>
+    <main class="max-w-6xl mx-auto p-4 space-y-6">
+        <section class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
+            <h2 class="text-lg font-bold mb-4 border-b pb-2">1) 患者背景と現症入力</h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <label class="text-sm font-medium">
+                    体重 (kg)
+                    <input id="patientWeight" type="number" min="1" value="60" class="mt-1 w-full border rounded p-2">
+                </label>
+                <label class="text-sm font-medium">
+                    摂取からの時間 (分)
+                    <input id="elapsedMinutes" type="number" min="0" value="90" class="mt-1 w-full border rounded p-2">
+                </label>
+                <label class="text-sm font-medium md:col-span-2">
+                    患者症状（カンマ区切り）
+                    <input id="observedSymptoms" type="text" placeholder="例: 嘔吐, 意識障害, 頻脈" class="mt-1 w-full border rounded p-2">
+                </label>
+            </div>
+            <div class="mt-3 flex items-center gap-2">
+                <input id="airwaySecured" type="checkbox" class="h-4 w-4">
+                <label for="airwaySecured" class="text-sm">気道確保済み（胃洗浄の安全性評価に使用）</label>
+            </div>
+            <div class="mt-3">
+                <p class="text-xs text-slate-500 mb-2">症状クイック入力</p>
+                <div id="symptomChips" class="flex flex-wrap gap-2"></div>
             </div>
         </section>
 
-        <section class="mb-6">
-            <h2 class="text-lg font-bold mb-4">2. 優先順位・重症度推察 (自動ソート)</h2>
-            <div id="drugList" class="space-y-3">
-                <p class="text-slate-400 text-center py-10">薬剤を入力してください</p>
-            </div>
-        </section>
-
-        <section id="treatmentSection" class="hidden bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-            <h2 class="text-lg font-bold mb-4 border-b pb-2 text-red-600">3. 治療妥当性の検証マトリクス</h2>
-            <div id="treatmentDetails" class="space-y-6">
+        <section class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
+            <h2 class="text-lg font-bold mb-4 border-b pb-2">2) 摂取薬剤入力（製剤名/成分名、内服量）</h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <label class="text-sm font-medium md:col-span-2">
+                    薬剤名（製剤名 or 成分名）
+                    <input id="drugInput" list="drugCandidates" type="text" placeholder="例: カロナール錠500" class="mt-1 w-full border rounded p-2">
+                </label>
+                <datalist id="drugCandidates"></datalist>
+                <label class="text-sm font-medium">
+                    内服量 (mg)
+                    <input id="amountInput" type="number" min="0" placeholder="例: 10000" class="mt-1 w-full border rounded p-2">
+                </label>
+                <div class="flex items-end gap-2">
+                    <button id="addDrugBtn" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition">
+                        追加
+                    </button>
+                    <button id="clearBtn" class="w-full bg-slate-200 text-slate-700 font-bold py-2 px-4 rounded hover:bg-slate-300 transition">
+                        全消去
+                    </button>
                 </div>
+            </div>
+        </section>
+
+        <section class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
+            <h2 class="text-lg font-bold mb-3 border-b pb-2">3) 診療フロー（自動化している処理）</h2>
+            <ol class="list-decimal pl-5 text-sm text-slate-700 space-y-1">
+                <li>入力した薬剤名から製剤データを参照し、含有成分を展開</li>
+                <li>成分ごとの毒性閾値（中毒量 mg/kg）を参照</li>
+                <li>内服量と体重から摂取量 mg/kg を算出し、重症度を推定</li>
+                <li>重症度スコアで危険度順にソート</li>
+                <li>予測症状と患者症状の一致を評価</li>
+                <li>拮抗薬・胃洗浄・活性炭・血液浄化・その他治療の妥当性を理由付きで判定</li>
+            </ol>
+        </section>
+
+        <section>
+            <h2 class="text-lg font-bold mb-3">4) 重症度ランキング（高リスク順）</h2>
+            <div id="priorityList" class="space-y-3">
+                <p class="text-slate-400 text-center py-10 bg-white rounded-xl border border-slate-200">
+                    薬剤を追加するとここに解析結果が表示されます
+                </p>
+            </div>
+        </section>
+
+        <section id="treatmentSection" class="hidden bg-white border border-slate-200 rounded-xl shadow-sm p-5">
+            <h2 class="text-lg font-bold mb-4 border-b pb-2 text-red-700">5) 治療妥当性の検証</h2>
+            <div id="treatmentMatrix" class="space-y-6"></div>
         </section>
     </main>
 
     <script>
-        // [設計理由]: 複雑な医療ロジックとUIの状態を同期させるため、OOP(Class)による状態管理を採用。
-        
-        class ToxicNavi {
+        class ToxicNaviApp {
             constructor() {
-                this.drugs = [];
-                this.patientWeight = 60;
-                // マスターデータ（本来は外部APIや膨大なJSONにする）
-                this.masterData = {
-                    "アセトアミノフェン": { comp: "Acetaminophen", toxicDose: 150, unit: "mg/kg", symptoms: "嘔気, 肝不全", antidote: "N-アセチルシステイン", charcoal: true, lavage: true, dialysis: false },
-                    "カフェイン": { comp: "Caffeine", toxicDose: 15, unit: "mg/kg", symptoms: "頻脈, 興奮, 不整脈", antidote: "なし(対症療法)", charcoal: true, lavage: true, dialysis: true },
-                    "ジアゼパム": { comp: "Diazepam", toxicDose: 0.5, unit: "mg/kg", symptoms: "意識障害, 呼吸抑制", antidote: "フルマゼニル", charcoal: true, lavage: false, dialysis: false }
+                this.entries = [];
+                this.entryCounter = 1;
+                this.commonSymptoms = [
+                    "嘔気", "嘔吐", "腹痛", "頻脈", "低血圧", "痙攣", "意識障害",
+                    "呼吸抑制", "不整脈", "代謝性アシドーシス", "耳鳴", "発汗"
+                ];
+
+                this.productDB = {
+                    "カロナール錠500": [{ ingredient: "アセトアミノフェン", ratio: 1 }],
+                    "バファリンA": [{ ingredient: "アスピリン", ratio: 0.85 }, { ingredient: "カフェイン", ratio: 0.15 }],
+                    "エスタロンモカ": [{ ingredient: "カフェイン", ratio: 1 }],
+                    "セルシン錠": [{ ingredient: "ジアゼパム", ratio: 1 }],
+                    "メトグルコ錠": [{ ingredient: "メトホルミン", ratio: 1 }],
+                    "テオドール錠": [{ ingredient: "テオフィリン", ratio: 1 }],
+                    "ブロン配合錠": [{ ingredient: "ジヒドロコデイン", ratio: 0.35 }, { ingredient: "カフェイン", ratio: 0.15 }, { ingredient: "メチルエフェドリン", ratio: 0.5 }],
+                    "不凍液(エチレングリコール)": [{ ingredient: "エチレングリコール", ratio: 1 }]
                 };
+
+                this.ingredientDB = {
+                    "アセトアミノフェン": {
+                        component: "Acetaminophen",
+                        toxicDoseMgKg: 150,
+                        severeDoseMgKg: 250,
+                        criticalDoseMgKg: 300,
+                        symptoms: ["嘔気", "嘔吐", "腹痛", "肝機能障害", "意識障害"],
+                        criticalSymptoms: ["意識障害"],
+                        antidote: { name: "N-アセチルシステイン", indication: "摂取量 150 mg/kg 超、または血中濃度で治療域超過" },
+                        lavage: { allow: true, windowMin: 60, note: "致死量が疑われる早期例でのみ検討" },
+                        charcoal: { allow: true, windowMin: 120, extendedWindowMin: 240, note: "徐放製剤では延長して検討" },
+                        dialysis: { effective: false, indication: "通常は適応外" },
+                        otherTreatments: [
+                            { name: "血中濃度測定", severityMin: 2, note: "4時間以降の濃度を評価して治療継続判断" },
+                            { name: "肝機能/凝固モニタリング", severityMin: 2, note: "AST/ALT/INRを連続評価" }
+                        ]
+                    },
+                    "アスピリン": {
+                        component: "Aspirin",
+                        toxicDoseMgKg: 150,
+                        severeDoseMgKg: 300,
+                        criticalDoseMgKg: 500,
+                        symptoms: ["過換気", "耳鳴", "嘔吐", "発熱", "意識障害"],
+                        criticalSymptoms: ["意識障害", "過換気"],
+                        antidote: { name: "特異的拮抗薬なし", indication: "尿アルカリ化・支持療法が中心" },
+                        lavage: { allow: true, windowMin: 60, note: "大量摂取で1時間以内なら検討" },
+                        charcoal: { allow: true, windowMin: 120, extendedWindowMin: 240, note: "大量摂取時は再投与を検討" },
+                        dialysis: { effective: true, indication: "重症アシドーシス、腎障害、神経症状で適応" },
+                        otherTreatments: [
+                            { name: "尿アルカリ化", severityMin: 3, note: "炭酸水素ナトリウムで排泄促進" },
+                            { name: "体温管理", severityMin: 2, note: "高体温は予後悪化因子" }
+                        ]
+                    },
+                    "カフェイン": {
+                        component: "Caffeine",
+                        toxicDoseMgKg: 15,
+                        severeDoseMgKg: 30,
+                        criticalDoseMgKg: 80,
+                        symptoms: ["頻脈", "興奮", "振戦", "不整脈", "痙攣"],
+                        criticalSymptoms: ["不整脈", "痙攣"],
+                        antidote: { name: "特異的拮抗薬なし", indication: "循環管理と痙攣コントロール" },
+                        lavage: { allow: true, windowMin: 60, note: "高用量摂取直後であれば考慮" },
+                        charcoal: { allow: true, windowMin: 120, extendedWindowMin: 240, note: "早期投与ほど有効" },
+                        dialysis: { effective: true, indication: "難治性不整脈や重篤中毒で検討" },
+                        otherTreatments: [
+                            { name: "不整脈監視", severityMin: 2, note: "持続モニター管理" },
+                            { name: "痙攣時ベンゾジアゼピン", severityMin: 3, symptomAny: ["痙攣"], note: "痙攣管理を優先" }
+                        ]
+                    },
+                    "ジアゼパム": {
+                        component: "Diazepam",
+                        toxicDoseMgKg: 0.5,
+                        severeDoseMgKg: 1.5,
+                        criticalDoseMgKg: 3,
+                        symptoms: ["傾眠", "構語障害", "呼吸抑制", "意識障害"],
+                        criticalSymptoms: ["呼吸抑制", "意識障害"],
+                        antidote: { name: "フルマゼニル", indication: "適応を厳密に評価（依存・痙攣リスクに注意）" },
+                        lavage: { allow: false, windowMin: 0, note: "通常推奨されない" },
+                        charcoal: { allow: true, windowMin: 120, extendedWindowMin: 240, note: "気道保護が前提" },
+                        dialysis: { effective: false, indication: "効果乏しい" },
+                        otherTreatments: [
+                            { name: "気道/呼吸管理", severityMin: 3, symptomAny: ["呼吸抑制"], note: "SpO2低下時は早期介入" }
+                        ]
+                    },
+                    "メトホルミン": {
+                        component: "Metformin",
+                        toxicDoseMgKg: 50,
+                        severeDoseMgKg: 100,
+                        criticalDoseMgKg: 200,
+                        symptoms: ["嘔吐", "腹痛", "頻呼吸", "代謝性アシドーシス", "意識障害"],
+                        criticalSymptoms: ["代謝性アシドーシス", "意識障害"],
+                        antidote: { name: "特異的拮抗薬なし", indication: "乳酸アシドーシス管理が中心" },
+                        lavage: { allow: false, windowMin: 0, note: "通常は適応乏しい" },
+                        charcoal: { allow: true, windowMin: 120, extendedWindowMin: 180, note: "早期例でのみ有効性が期待" },
+                        dialysis: { effective: true, indication: "重度アシドーシス・腎不全で強く推奨" },
+                        otherTreatments: [
+                            { name: "乳酸/血液ガス測定", severityMin: 2, note: "乳酸上昇を連続評価" },
+                            { name: "循環管理", severityMin: 3, note: "ショック徴候へ早期対応" }
+                        ]
+                    },
+                    "テオフィリン": {
+                        component: "Theophylline",
+                        toxicDoseMgKg: 10,
+                        severeDoseMgKg: 20,
+                        criticalDoseMgKg: 40,
+                        symptoms: ["嘔吐", "頻脈", "不整脈", "低血圧", "痙攣"],
+                        criticalSymptoms: ["痙攣", "不整脈"],
+                        antidote: { name: "特異的拮抗薬なし", indication: "痙攣・不整脈管理を優先" },
+                        lavage: { allow: true, windowMin: 60, note: "大量摂取直後で考慮" },
+                        charcoal: { allow: true, windowMin: 120, extendedWindowMin: 360, note: "多回投与の適応を検討" },
+                        dialysis: { effective: true, indication: "重症中毒、痙攣、難治性不整脈で適応" },
+                        otherTreatments: [
+                            { name: "多回活性炭の検討", severityMin: 3, note: "再循環を抑制" },
+                            { name: "痙攣時鎮静治療", severityMin: 3, symptomAny: ["痙攣"], note: "ベンゾジアゼピンを優先" }
+                        ]
+                    },
+                    "ジヒドロコデイン": {
+                        component: "Dihydrocodeine",
+                        toxicDoseMgKg: 1,
+                        severeDoseMgKg: 2,
+                        criticalDoseMgKg: 4,
+                        symptoms: ["縮瞳", "傾眠", "呼吸抑制", "低酸素"],
+                        criticalSymptoms: ["呼吸抑制", "低酸素"],
+                        antidote: { name: "ナロキソン", indication: "呼吸抑制または意識障害で速やかに投与" },
+                        lavage: { allow: false, windowMin: 0, note: "誤嚥リスクを考慮し通常非推奨" },
+                        charcoal: { allow: true, windowMin: 120, extendedWindowMin: 240, note: "気道保護下で検討" },
+                        dialysis: { effective: false, indication: "通常不要" },
+                        otherTreatments: [
+                            { name: "呼吸管理", severityMin: 3, symptomAny: ["呼吸抑制", "低酸素"], note: "換気補助を早期に判断" }
+                        ]
+                    },
+                    "メチルエフェドリン": {
+                        component: "Methylephedrine",
+                        toxicDoseMgKg: 2,
+                        severeDoseMgKg: 5,
+                        criticalDoseMgKg: 10,
+                        symptoms: ["頻脈", "不穏", "高血圧", "不整脈"],
+                        criticalSymptoms: ["不整脈"],
+                        antidote: { name: "特異的拮抗薬なし", indication: "循環動態に応じた対症療法" },
+                        lavage: { allow: true, windowMin: 60, note: "重症摂取直後のみ" },
+                        charcoal: { allow: true, windowMin: 120, extendedWindowMin: 180, note: "早期投与を検討" },
+                        dialysis: { effective: false, indication: "通常効果乏しい" },
+                        otherTreatments: [
+                            { name: "鎮静・循環管理", severityMin: 2, note: "興奮や重度頻脈を制御" }
+                        ]
+                    },
+                    "エチレングリコール": {
+                        component: "Ethylene glycol",
+                        toxicDoseMgKg: 50,
+                        severeDoseMgKg: 100,
+                        criticalDoseMgKg: 150,
+                        symptoms: ["酩酊様症状", "頻呼吸", "代謝性アシドーシス", "腎障害", "意識障害"],
+                        criticalSymptoms: ["代謝性アシドーシス", "意識障害"],
+                        antidote: { name: "ホメピゾール（またはエタノール療法）", indication: "疑い段階で早期開始を検討" },
+                        lavage: { allow: false, windowMin: 0, note: "通常推奨されない" },
+                        charcoal: { allow: false, windowMin: 0, extendedWindowMin: 0, note: "吸着効果が乏しい" },
+                        dialysis: { effective: true, indication: "アシドーシス、腎障害、重症例で積極適応" },
+                        otherTreatments: [
+                            { name: "アシドーシス補正", severityMin: 3, note: "重炭酸投与を検討" },
+                            { name: "腎機能モニタリング", severityMin: 2, note: "Crと尿量を連続評価" }
+                        ]
+                    }
+                };
+
+                this.bindEvents();
+                this.populateDrugCandidates();
+                this.renderSymptomChips();
+            }
+
+            bindEvents() {
+                document.getElementById("addDrugBtn").addEventListener("click", () => this.addDrug());
+                document.getElementById("clearBtn").addEventListener("click", () => this.clearAll());
+                document.getElementById("amountInput").addEventListener("keydown", (event) => {
+                    if (event.key === "Enter") this.addDrug();
+                });
+                document.getElementById("drugInput").addEventListener("keydown", (event) => {
+                    if (event.key === "Enter") this.addDrug();
+                });
+                document.getElementById("priorityList").addEventListener("click", (event) => {
+                    const button = event.target.closest("[data-remove-id]");
+                    if (!button) return;
+                    this.removeEntry(Number(button.dataset.removeId));
+                });
+            }
+
+            renderSymptomChips() {
+                const chipArea = document.getElementById("symptomChips");
+                chipArea.innerHTML = this.commonSymptoms.map((symptom) => `
+                    <button type="button" class="text-xs border border-slate-300 rounded-full px-3 py-1 hover:bg-slate-100" data-chip="${this.escapeHTML(symptom)}">
+                        ${this.escapeHTML(symptom)}
+                    </button>
+                `).join("");
+
+                chipArea.addEventListener("click", (event) => {
+                    const chip = event.target.closest("[data-chip]");
+                    if (!chip) return;
+                    this.appendSymptom(chip.dataset.chip);
+                });
+            }
+
+            appendSymptom(symptom) {
+                const symptomInput = document.getElementById("observedSymptoms");
+                const currentSymptoms = this.parseSymptoms(symptomInput.value);
+                if (!currentSymptoms.includes(symptom)) {
+                    currentSymptoms.push(symptom);
+                    symptomInput.value = currentSymptoms.join(", ");
+                }
+            }
+
+            populateDrugCandidates() {
+                const datalist = document.getElementById("drugCandidates");
+                const candidates = [
+                    ...Object.keys(this.productDB),
+                    ...Object.keys(this.ingredientDB)
+                ].sort((a, b) => a.localeCompare(b, "ja"));
+                datalist.innerHTML = candidates.map((name) => `<option value="${this.escapeHTML(name)}"></option>`).join("");
             }
 
             addDrug() {
-                const name = document.getElementById('drugInput').value;
-                const amount = parseFloat(document.getElementById('amountInput').value);
-                this.patientWeight = parseFloat(document.getElementById('patientWeight').value);
+                const drugInput = document.getElementById("drugInput");
+                const amountInput = document.getElementById("amountInput");
+                const patientWeight = Number(document.getElementById("patientWeight").value);
+                const elapsedMin = Number(document.getElementById("elapsedMinutes").value);
+                const airwaySecured = document.getElementById("airwaySecured").checked;
+                const observedSymptoms = this.parseSymptoms(document.getElementById("observedSymptoms").value);
 
-                if (!name || !amount) return alert("入力が不完全です");
+                const drugName = drugInput.value.trim();
+                const amountMg = Number(amountInput.value);
 
-                const info = this.masterData[name] || { comp: "不明", toxicDose: 0, symptoms: "不明", unknown: true };
-                
-                // 重症度計算 (摂取量 / 体重)
-                const dosePerKg = amount / this.patientWeight;
-                const severityScore = info.toxicDose ? (dosePerKg / info.toxicDose) : 0;
+                if (!drugName || !Number.isFinite(amountMg) || amountMg <= 0) {
+                    alert("薬剤名と内服量を正しく入力してください。");
+                    return;
+                }
+                if (!Number.isFinite(patientWeight) || patientWeight <= 0) {
+                    alert("体重(kg)を正しく入力してください。");
+                    return;
+                }
+                if (!Number.isFinite(elapsedMin) || elapsedMin < 0) {
+                    alert("摂取からの時間(分)を0以上で入力してください。");
+                    return;
+                }
 
-                this.drugs.push({
-                    name, amount, dosePerKg, info, severityScore
+                const ingestionContext = {
+                    patientWeight,
+                    elapsedMin,
+                    airwaySecured,
+                    observedSymptoms
+                };
+
+                const resolved = this.resolveDrugToIngredients(drugName, amountMg);
+                resolved.ingredients.forEach((ingredientItem) => {
+                    const amountForIngredient = amountMg * ingredientItem.ratio;
+                    const ingredientInfo = this.getIngredientInfo(ingredientItem.ingredient);
+                    const doseMgKg = amountForIngredient / patientWeight;
+                    const severity = this.classifySeverity(doseMgKg, ingredientInfo);
+                    const predictedSymptoms = ingredientInfo.symptoms || [];
+                    const matchedSymptoms = this.matchSymptoms(predictedSymptoms, observedSymptoms);
+                    const toxicRatio = ingredientInfo.toxicDoseMgKg ? (doseMgKg / ingredientInfo.toxicDoseMgKg) : null;
+
+                    const treatment = this.evaluateTreatments({
+                        ingredientInfo,
+                        severity,
+                        doseMgKg,
+                        toxicRatio,
+                        context: ingestionContext,
+                        matchedSymptoms
+                    });
+
+                    const riskScore = this.calculateRiskScore(severity, toxicRatio, matchedSymptoms.length, ingredientInfo.unknown);
+
+                    this.entries.push({
+                        id: this.entryCounter++,
+                        sourceDrug: resolved.sourceName,
+                        inputDrug: drugName,
+                        ingredient: ingredientItem.ingredient,
+                        component: ingredientInfo.component,
+                        ingredientAmountMg: amountForIngredient,
+                        doseMgKg,
+                        toxicRatio,
+                        severity,
+                        predictedSymptoms,
+                        matchedSymptoms,
+                        treatment,
+                        riskScore,
+                        unknown: ingredientInfo.unknown
+                    });
                 });
 
-                // 重症度順にソート
-                this.drugs.sort((a, b) => b.severityScore - a.severityScore);
-                
+                this.entries.sort((a, b) => b.riskScore - a.riskScore);
+                this.render();
+
+                amountInput.value = "";
+                drugInput.value = "";
+                drugInput.focus();
+            }
+
+            resolveDrugToIngredients(drugName, amountMg) {
+                const matchedProductKey = this.findKeyByNormalizedName(this.productDB, drugName);
+                if (matchedProductKey) {
+                    const ingredientDefs = this.productDB[matchedProductKey];
+                    const ratioTotal = ingredientDefs.reduce((sum, item) => sum + item.ratio, 0) || 1;
+                    return {
+                        sourceName: matchedProductKey,
+                        ingredients: ingredientDefs.map((item) => ({
+                            ingredient: item.ingredient,
+                            ratio: item.ratio / ratioTotal
+                        })),
+                        totalAmountMg: amountMg
+                    };
+                }
+
+                const matchedIngredientKey = this.findKeyByNormalizedName(this.ingredientDB, drugName);
+                if (matchedIngredientKey) {
+                    return {
+                        sourceName: matchedIngredientKey,
+                        ingredients: [{ ingredient: matchedIngredientKey, ratio: 1 }],
+                        totalAmountMg: amountMg
+                    };
+                }
+
+                return {
+                    sourceName: `${drugName} (データ未登録)`,
+                    ingredients: [{ ingredient: drugName, ratio: 1 }],
+                    totalAmountMg: amountMg
+                };
+            }
+
+            getIngredientInfo(ingredientName) {
+                const matchedKey = this.findKeyByNormalizedName(this.ingredientDB, ingredientName);
+                if (matchedKey) return this.ingredientDB[matchedKey];
+
+                return {
+                    component: "Unknown",
+                    toxicDoseMgKg: null,
+                    severeDoseMgKg: null,
+                    criticalDoseMgKg: null,
+                    symptoms: ["情報不足"],
+                    criticalSymptoms: [],
+                    antidote: { name: "要情報確認", indication: "製剤情報、成分、毒性データを至急確認" },
+                    lavage: { allow: false, windowMin: 0, note: "毒性不明のため慎重判断" },
+                    charcoal: { allow: false, windowMin: 0, extendedWindowMin: 0, note: "適応可否を確認" },
+                    dialysis: { effective: false, indication: "成分特性の確認が必要" },
+                    otherTreatments: [{ name: "中毒情報センターへ照会", severityMin: 1, note: "不明成分は一次情報を収集" }],
+                    unknown: true
+                };
+            }
+
+            classifySeverity(doseMgKg, ingredientInfo) {
+                if (!ingredientInfo.toxicDoseMgKg) {
+                    return { label: "情報不足", rank: 3, badgeClass: "severity-mid", detail: "中毒量データなし" };
+                }
+                if (doseMgKg >= ingredientInfo.criticalDoseMgKg) {
+                    return { label: "最重症", rank: 5, badgeClass: "severity-critical", detail: "致死域の可能性" };
+                }
+                if (doseMgKg >= ingredientInfo.severeDoseMgKg) {
+                    return { label: "重症", rank: 4, badgeClass: "severity-high", detail: "集中治療を要する可能性" };
+                }
+                if (doseMgKg >= ingredientInfo.toxicDoseMgKg) {
+                    return { label: "中等症", rank: 3, badgeClass: "severity-mid", detail: "中毒域に到達" };
+                }
+                if (doseMgKg >= ingredientInfo.toxicDoseMgKg * 0.5) {
+                    return { label: "軽症", rank: 2, badgeClass: "severity-low", detail: "症状発現に注意" };
+                }
+                return { label: "低リスク", rank: 1, badgeClass: "severity-minimal", detail: "現時点では低リスク" };
+            }
+
+            calculateRiskScore(severity, toxicRatio, matchCount, isUnknown) {
+                if (isUnknown) return 320 + (matchCount * 8);
+                const ratioScore = toxicRatio ? Math.min(100, toxicRatio * 30) : 0;
+                return severity.rank * 100 + ratioScore + (matchCount * 8);
+            }
+
+            parseSymptoms(symptomText) {
+                if (!symptomText) return [];
+                const parsed = symptomText.split(/[,、\n]/).map((item) => item.trim()).filter(Boolean);
+                return [...new Set(parsed)];
+            }
+
+            matchSymptoms(predicted, observed) {
+                const matches = predicted.filter((predictedSymptom) => {
+                    return observed.some((observedSymptom) => {
+                        return observedSymptom.includes(predictedSymptom) || predictedSymptom.includes(observedSymptom);
+                    });
+                });
+                return [...new Set(matches)];
+            }
+
+            evaluateTreatments(payload) {
+                const { ingredientInfo, severity, toxicRatio, context, matchedSymptoms } = payload;
+                if (ingredientInfo.unknown) {
+                    return {
+                        antidote: { status: "要情報確認", action: "成分特定を優先", reason: "拮抗薬の適応判定に成分同定が必須" },
+                        lavage: { status: "要情報確認", action: "毒性情報確認後に判断", reason: "毒性・誤嚥リスクの評価が未確定" },
+                        charcoal: { status: "要情報確認", action: "吸着性を確認", reason: "成分の吸着可否データがない" },
+                        dialysis: { status: "要情報確認", action: "血液浄化の有効性を確認", reason: "蛋白結合率/分布容積データが必要" },
+                        others: [{ name: "中毒情報センターへ即時照会", status: "妥当", reason: "不明成分の初期対応として必須" }]
+                    };
+                }
+
+                const hasCriticalSymptom = matchedSymptoms.some((symptom) => ingredientInfo.criticalSymptoms.includes(symptom));
+                const toxicExceeded = typeof toxicRatio === "number" && toxicRatio >= 1;
+
+                const antidote = (() => {
+                    const action = ingredientInfo.antidote.name;
+                    if (action.includes("なし")) {
+                        return { status: "適応なし", action, reason: ingredientInfo.antidote.indication };
+                    }
+                    if (severity.rank >= 3 || hasCriticalSymptom || toxicExceeded) {
+                        return { status: "妥当", action, reason: ingredientInfo.antidote.indication };
+                    }
+                    return { status: "条件付き", action, reason: `現時点は低〜軽症。ただし ${ingredientInfo.antidote.indication}` };
+                })();
+
+                const lavage = (() => {
+                    if (!ingredientInfo.lavage.allow) {
+                        return { status: "非推奨", action: "胃洗浄を通常は行わない", reason: ingredientInfo.lavage.note };
+                    }
+                    if (context.elapsedMin > ingredientInfo.lavage.windowMin) {
+                        return { status: "非推奨", action: "適応時間外", reason: `${ingredientInfo.lavage.windowMin} 分を超過` };
+                    }
+                    if (!context.airwaySecured) {
+                        return { status: "慎重", action: "気道確保後に再評価", reason: "誤嚥リスクが高い" };
+                    }
+                    if (severity.rank >= 4 || (typeof toxicRatio === "number" && toxicRatio >= 2)) {
+                        return { status: "妥当", action: "胃洗浄を検討", reason: ingredientInfo.lavage.note };
+                    }
+                    return { status: "条件付き", action: "症状進行時に検討", reason: "重症度が上がれば適応" };
+                })();
+
+                const charcoal = (() => {
+                    if (!ingredientInfo.charcoal.allow) {
+                        return { status: "非推奨", action: "活性炭は効果乏しい", reason: ingredientInfo.charcoal.note };
+                    }
+                    if (context.elapsedMin <= ingredientInfo.charcoal.windowMin) {
+                        return { status: "妥当", action: "活性炭投与を検討", reason: ingredientInfo.charcoal.note };
+                    }
+                    if (context.elapsedMin <= ingredientInfo.charcoal.extendedWindowMin && severity.rank >= 3) {
+                        return { status: "条件付き", action: "遅延投与を検討", reason: "重症例であれば利益が残る可能性" };
+                    }
+                    return { status: "非推奨", action: "投与メリットが限定的", reason: "有効時間を超過" };
+                })();
+
+                const dialysis = (() => {
+                    if (!ingredientInfo.dialysis.effective) {
+                        return { status: "適応なし", action: "血液浄化は通常不要", reason: ingredientInfo.dialysis.indication };
+                    }
+                    if (severity.rank >= 4 || hasCriticalSymptom || (typeof toxicRatio === "number" && toxicRatio >= 2)) {
+                        return { status: "妥当", action: "血液浄化を早期検討", reason: ingredientInfo.dialysis.indication };
+                    }
+                    if (severity.rank >= 3) {
+                        return { status: "条件付き", action: "重症化時に導入検討", reason: ingredientInfo.dialysis.indication };
+                    }
+                    return { status: "慎重", action: "現時点では経過観察", reason: "明確な導入基準に未達" };
+                })();
+
+                const others = ingredientInfo.otherTreatments.map((item) => {
+                    const symptomHit = !item.symptomAny || item.symptomAny.some((symptom) => {
+                        return context.observedSymptoms.some((observed) => observed.includes(symptom) || symptom.includes(observed));
+                    });
+                    const severityHit = severity.rank >= (item.severityMin || 1);
+
+                    let status = "慎重";
+                    if (severityHit && symptomHit) {
+                        status = "妥当";
+                    } else if (severityHit || symptomHit) {
+                        status = "条件付き";
+                    }
+
+                    return {
+                        name: item.name,
+                        status,
+                        reason: item.note
+                    };
+                });
+
+                return { antidote, lavage, charcoal, dialysis, others };
+            }
+
+            removeEntry(id) {
+                this.entries = this.entries.filter((entry) => entry.id !== id);
                 this.render();
             }
 
+            clearAll() {
+                this.entries = [];
+                this.render();
+            }
+
+            findKeyByNormalizedName(objectMap, targetName) {
+                const normalizedTarget = this.normalizeName(targetName);
+                return Object.keys(objectMap).find((key) => this.normalizeName(key) === normalizedTarget) || null;
+            }
+
+            normalizeName(value) {
+                return String(value).replace(/\s+/g, "").toLowerCase();
+            }
+
+            formatNumber(value, digits = 1) {
+                return Number(value).toFixed(digits);
+            }
+
+            statusClass(status) {
+                const map = {
+                    "妥当": "bg-green-100 text-green-800",
+                    "条件付き": "bg-amber-100 text-amber-800",
+                    "慎重": "bg-sky-100 text-sky-800",
+                    "非推奨": "bg-rose-100 text-rose-800",
+                    "適応なし": "bg-slate-100 text-slate-700",
+                    "要情報確認": "bg-violet-100 text-violet-800"
+                };
+                return map[status] || "bg-slate-100 text-slate-700";
+            }
+
             render() {
-                const listEl = document.getElementById('drugList');
-                const treatEl = document.getElementById('treatmentSection');
-                const treatDetailEl = document.getElementById('treatmentDetails');
-                
-                listEl.innerHTML = "";
-                treatDetailEl.innerHTML = "";
+                this.renderPriorityList();
+                this.renderTreatmentMatrix();
+            }
 
-                if (this.drugs.length > 0) treatEl.classList.remove('hidden');
+            renderPriorityList() {
+                const container = document.getElementById("priorityList");
+                if (this.entries.length === 0) {
+                    container.innerHTML = `
+                        <p class="text-slate-400 text-center py-10 bg-white rounded-xl border border-slate-200">
+                            薬剤を追加するとここに解析結果が表示されます
+                        </p>
+                    `;
+                    return;
+                }
 
-                this.drugs.forEach((drug, index) => {
-                    const sevClass = drug.severityScore >= 1 ? 'severity-high' : 'severity-mid';
-                    
-                    // リスト表示
-                    listEl.innerHTML += `
-                        <div class="${sevClass} p-4 rounded shadow-sm flex justify-between items-center bg-white">
+                container.innerHTML = this.entries.map((entry, index) => {
+                    const predictedWithoutMatch = entry.predictedSymptoms.filter((symptom) => !entry.matchedSymptoms.includes(symptom));
+                    const matchedText = entry.matchedSymptoms.length > 0 ? entry.matchedSymptoms.join(", ") : "一致なし";
+                    const unmatchedText = predictedWithoutMatch.length > 0 ? predictedWithoutMatch.join(", ") : "主要症状は概ね一致";
+                    const toxicDoseText = entry.unknown ? "不明" : `${entry.toxicRatio ? this.formatNumber(entry.toxicRatio, 2) : "0.00"} x 中毒量`;
+                    const sourceLabel = entry.sourceDrug === entry.ingredient ? "成分直入力" : `製剤: ${entry.sourceDrug}`;
+
+                    return `
+                        <article class="bg-white border border-slate-200 rounded-xl shadow-sm p-4">
+                            <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                                <div class="space-y-2">
+                                    <p class="text-xs text-slate-500 font-semibold">優先度 ${index + 1} | ${this.escapeHTML(sourceLabel)}</p>
+                                    <h3 class="text-lg font-bold">
+                                        ${this.escapeHTML(entry.ingredient)}
+                                        <span class="text-sm text-slate-500 font-medium">(${this.escapeHTML(entry.component)})</span>
+                                    </h3>
+                                    <div class="text-sm text-slate-700 space-y-1">
+                                        <p>推定成分量: <span class="font-semibold">${this.formatNumber(entry.ingredientAmountMg, 1)} mg</span></p>
+                                        <p>推定摂取量: <span class="font-semibold">${this.formatNumber(entry.doseMgKg, 2)} mg/kg</span> / 毒性比: <span class="font-semibold">${toxicDoseText}</span></p>
+                                        <p>予測症状: <span class="text-red-700">${this.escapeHTML(entry.predictedSymptoms.join(", "))}</span></p>
+                                        <p>患者症状一致: <span class="text-green-700">${this.escapeHTML(matchedText)}</span></p>
+                                        <p>未一致症状: <span class="text-slate-600">${this.escapeHTML(unmatchedText)}</span></p>
+                                    </div>
+                                </div>
+                                <div class="flex md:flex-col gap-2 items-center md:items-end">
+                                    <span class="px-3 py-1 rounded-full text-xs font-bold ${entry.severity.badgeClass}">
+                                        ${this.escapeHTML(entry.severity.label)}
+                                    </span>
+                                    <span class="text-xs text-slate-500">${this.escapeHTML(entry.severity.detail)}</span>
+                                    <button data-remove-id="${entry.id}" class="text-xs px-3 py-1 rounded border border-slate-300 hover:bg-slate-100">
+                                        この成分を削除
+                                    </button>
+                                </div>
+                            </div>
+                        </article>
+                    `;
+                }).join("");
+            }
+
+            renderTreatmentMatrix() {
+                const section = document.getElementById("treatmentSection");
+                const container = document.getElementById("treatmentMatrix");
+                if (this.entries.length === 0) {
+                    section.classList.add("hidden");
+                    container.innerHTML = "";
+                    return;
+                }
+
+                section.classList.remove("hidden");
+                container.innerHTML = this.entries.map((entry, index) => {
+                    const treatment = entry.treatment;
+                    const otherRows = treatment.others.map((item) => `
+                        <li class="flex items-start gap-2 mb-2">
+                            <span class="text-xs font-bold px-2 py-1 rounded ${this.statusClass(item.status)}">${this.escapeHTML(item.status)}</span>
                             <div>
-                                <span class="text-xs font-bold text-slate-500">No.${index + 1} 優先度高</span>
-                                <h3 class="font-bold text-lg">${drug.name} (${drug.info.comp})</h3>
-                                <p class="text-sm">予測症状: <span class="text-red-600">${drug.info.symptoms}</span></p>
+                                <p class="font-semibold text-sm">${this.escapeHTML(item.name)}</p>
+                                <p class="text-xs text-slate-600">${this.escapeHTML(item.reason)}</p>
                             </div>
-                            <div class="text-right">
-                                <div class="text-2xl font-black">${drug.dosePerKg.toFixed(1)}</div>
-                                <div class="text-xs">mg/kg 摂取</div>
-                            </div>
-                        </div>
-                    `;
+                        </li>
+                    `).join("");
 
-                    // 治療妥当性表示
-                    treatDetailEl.innerHTML += `
-                        <div class="border-l-4 border-slate-800 pl-4 mb-8">
-                            <h3 class="font-black text-xl mb-3 underline">${drug.name} の治療戦略</h3>
-                            <table class="w-full text-sm border-collapse">
-                                <tr class="border-b">
-                                    <td class="py-2 font-bold w-32">拮抗薬</td>
-                                    <td class="py-2">${drug.info.antidote || 'なし'}</td>
-                                </tr>
-                                <tr class="border-b">
-                                    <td class="py-2 font-bold text-blue-600">胃洗浄</td>
-                                    <td class="py-2">${drug.info.lavage ? '✅ 考慮（摂取1時間以内）' : '❌ 非推奨'}</td>
-                                </tr>
-                                <tr class="border-b">
-                                    <td class="py-2 font-bold text-green-600">活性炭</td>
-                                    <td class="py-2">${drug.info.charcoal ? '✅ 推奨' : '⚠️ 禁忌または効果薄'}</td>
-                                </tr>
-                                <tr class="border-b">
-                                    <td class="py-2 font-bold text-purple-600">血液浄化</td>
-                                    <td class="py-2">${drug.info.dialysis ? '✅ 適応検討（重症時）' : '❌ 効果なし'}</td>
-                                </tr>
-                            </table>
-                        </div>
+                    return `
+                        <article class="border border-slate-200 rounded-lg p-4">
+                            <h3 class="font-bold text-base mb-3">
+                                ${index + 1}. ${this.escapeHTML(entry.ingredient)} の治療妥当性
+                            </h3>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm border-collapse">
+                                    <tbody>
+                                        ${this.renderTreatmentRow("拮抗薬", treatment.antidote)}
+                                        ${this.renderTreatmentRow("胃洗浄", treatment.lavage)}
+                                        ${this.renderTreatmentRow("活性炭", treatment.charcoal)}
+                                        ${this.renderTreatmentRow("血液浄化", treatment.dialysis)}
+                                        <tr class="border-t">
+                                            <th class="text-left align-top p-2 w-36 bg-slate-50">その他治療</th>
+                                            <td class="p-2">
+                                                <ul>${otherRows}</ul>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </article>
                     `;
-                });
+                }).join("");
+            }
+
+            renderTreatmentRow(label, payload) {
+                return `
+                    <tr class="border-t">
+                        <th class="text-left align-top p-2 w-36 bg-slate-50">${label}</th>
+                        <td class="p-2">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-xs font-bold px-2 py-1 rounded ${this.statusClass(payload.status)}">${this.escapeHTML(payload.status)}</span>
+                                <span class="font-semibold">${this.escapeHTML(payload.action)}</span>
+                            </div>
+                            <p class="text-xs text-slate-600">${this.escapeHTML(payload.reason)}</p>
+                        </td>
+                    </tr>
+                `;
+            }
+
+            escapeHTML(value) {
+                return String(value)
+                    .replaceAll("&", "&amp;")
+                    .replaceAll("<", "&lt;")
+                    .replaceAll(">", "&gt;")
+                    .replaceAll('"', "&quot;")
+                    .replaceAll("'", "&#39;");
             }
         }
 
-        const app = new ToxicNavi();
+        const app = new ToxicNaviApp();
     </script>
 </body>
 </html>
