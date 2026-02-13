@@ -401,6 +401,11 @@ def main() -> None:
     parser.add_argument("--list-rows", type=int, default=100, help="検索一覧の1ページ表示件数")
     parser.add_argument("--sleep-sec", type=float, default=0.05, help="各リクエスト間の待機秒")
     parser.add_argument("--seed", type=int, default=20260213, help="接頭辞探索のシャッフルシード")
+    parser.add_argument(
+        "--priority-prefixes",
+        default="パ,ブ,バ,ア,エ,カ,コ,セ,ナ,ト,リ,キ,サ,ロ,ル",
+        help="先行探索する接頭辞（カンマ区切り）",
+    )
     parser.add_argument("--output-dir", default="data", help="出力先ディレクトリ")
     args = parser.parse_args()
 
@@ -418,7 +423,16 @@ def main() -> None:
     prefixes = get_name_prefixes(session)
     rng = random.Random(args.seed)
     rng.shuffle(prefixes)
+    priority_prefixes = [part.strip() for part in str(args.priority_prefixes or "").split(",") if part.strip()]
+    if priority_prefixes:
+        priority_set = set(priority_prefixes)
+        prioritized = [prefix for prefix in priority_prefixes if prefix in prefixes]
+        remaining = [prefix for prefix in prefixes if prefix not in priority_set]
+        prefixes = prioritized + remaining
+
     print(f"prefix count: {len(prefixes)}")
+    if priority_prefixes:
+        print(f"priority prefixes: {','.join(priority_prefixes)}")
 
     rows_by_code: Dict[str, SearchRow] = {}
     total_hits = 0
@@ -440,9 +454,12 @@ def main() -> None:
         if args.max_products > 0 and len(rows_by_code) >= args.max_products:
             break
 
-    selected_rows = sorted(rows_by_code.values(), key=lambda row: (row.product_name, row.code))
+    # rows_by_code は探索順(挿入順)を保持する。max-products を指定した場合は
+    # 探索順で先に見つかった製品を優先して採用し、偏りを抑える。
+    selected_rows = list(rows_by_code.values())
     if args.max_products > 0:
         selected_rows = selected_rows[: args.max_products]
+    selected_rows = sorted(selected_rows, key=lambda row: (row.product_name, row.code))
 
     print(f"detail fetch target: {len(selected_rows)} products")
     products: List[Dict[str, object]] = []
@@ -469,6 +486,9 @@ def main() -> None:
         "unique_codes_collected": len(rows_by_code),
         "detail_records": len(products),
         "detail_failed_codes": failed_codes,
+        "max_products": args.max_products,
+        "seed": args.seed,
+        "priority_prefixes": priority_prefixes,
     }
 
     output_dir = Path(args.output_dir)

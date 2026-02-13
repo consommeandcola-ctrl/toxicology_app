@@ -14,7 +14,7 @@
 ## 実行例
 
 ```bash
-python3 scripts/fetch_pmda_otc_dataset.py --max-products 300 --output-dir data
+python3 scripts/fetch_pmda_otc_dataset.py --max-products 1500 --sleep-sec 0.02 --output-dir data
 python3 scripts/fetch_pmda_iyaku_dataset.py --from-date 20100101 --to-date 20260213 --output-dir data
 ```
 
@@ -41,10 +41,11 @@ python3 scripts/fetch_pmda_iyaku_dataset.py --from-date 20100101 --to-date 20260
 ### OTC (`fetch_pmda_otc_dataset.py`)
 
 1. PMDA の候補リスト (`list_n.lib`) から製品名の先頭文字を収集
-2. 先頭文字で検索（前方一致）し、ページング API で結果を巡回
-3. 一意な製品コードを集約
-4. 各製品の HTML 詳細ページから `成分分量` を抽出
-5. 成分名と分量を正規表現ベースで抽出し JSON 化
+2. 主要接頭辞（例: `パ`,`ブ`,`バ`,`ア`,`エ` など）を優先探索し、前方一致で検索
+3. ページング API で結果を巡回し、一意な製品コードを集約
+4. `--max-products` 指定時は探索順を優先して対象製品を選定（偏りを軽減）
+5. 各製品の HTML 詳細ページから `成分分量` を抽出
+6. 成分名と分量を正規表現ベースで抽出し JSON 化
 
 ### 医療用 (`fetch_pmda_iyaku_dataset.py`)
 
