@@ -271,6 +271,34 @@
                     }
                 };
 
+                this.ingredientSynonyms = {
+                    "ジヒドロコデインリン酸塩": "ジヒドロコデイン",
+                    "ジヒドロコデインリン酸塩水和物": "ジヒドロコデイン",
+                    "無水カフェイン": "カフェイン",
+                    "カフェイン水和物": "カフェイン",
+                    "dl-メチルエフェドリン塩酸塩": "メチルエフェドリン",
+                    "dlメチルエフェドリン塩酸塩": "メチルエフェドリン",
+                    "d-メチルエフェドリン塩酸塩": "メチルエフェドリン",
+                    "l-メチルエフェドリン塩酸塩": "メチルエフェドリン",
+                    "メチルエフェドリン塩酸塩": "メチルエフェドリン",
+                    "アセチルサリチル酸": "アスピリン"
+                };
+                this.ingredientHeuristicSynonyms = [
+                    { keyword: "アセトアミノフェン", canonical: "アセトアミノフェン" },
+                    { keyword: "アスピリン", canonical: "アスピリン" },
+                    { keyword: "カフェイン", canonical: "カフェイン" },
+                    { keyword: "ジヒドロコデイン", canonical: "ジヒドロコデイン" },
+                    { keyword: "メチルエフェドリン", canonical: "メチルエフェドリン" },
+                    { keyword: "ジアゼパム", canonical: "ジアゼパム" },
+                    { keyword: "メトホルミン", canonical: "メトホルミン" },
+                    { keyword: "テオフィリン", canonical: "テオフィリン" },
+                    { keyword: "エチレングリコール", canonical: "エチレングリコール" }
+                ];
+                this.ingredientSynonymIndex = {};
+                Object.entries(this.ingredientSynonyms).forEach(([alias, canonical]) => {
+                    this.ingredientSynonymIndex[this.normalizeName(alias)] = canonical;
+                });
+
                 this.datasetLoaded = false;
                 this.bindEvents();
                 this.populateDrugCandidates();
@@ -320,6 +348,63 @@
                     value: Number(match[1]),
                     unit: match[2].toLowerCase()
                 };
+            }
+
+            canonicalizeIngredientName(name) {
+                const raw = String(name || "").trim();
+                if (!raw) return "";
+
+                const direct = this.findKeyByNormalizedName(this.ingredientDB, raw);
+                if (direct) return direct;
+
+                const byAlias = this.ingredientSynonymIndex[this.normalizeName(raw)];
+                if (byAlias) return byAlias;
+
+                const stripped = raw
+                    .replace(/（[^）]*）/g, "")
+                    .replace(/\([^)]*\)/g, "")
+                    .replace(/^無水/, "")
+                    .replace(/水和物$/, "")
+                    .replace(/塩酸塩$/, "")
+                    .replace(/リン酸塩$/, "")
+                    .replace(/臭化水素酸塩(?:水和物)?$/, "")
+                    .replace(/マレイン酸塩$/, "")
+                    .replace(/硫酸塩$/, "")
+                    .replace(/^[dDlL]+[-－]?/, "")
+                    .trim();
+
+                if (stripped) {
+                    const directStripped = this.findKeyByNormalizedName(this.ingredientDB, stripped);
+                    if (directStripped) return directStripped;
+                    const byAliasStripped = this.ingredientSynonymIndex[this.normalizeName(stripped)];
+                    if (byAliasStripped) return byAliasStripped;
+                }
+
+                for (const rule of this.ingredientHeuristicSynonyms) {
+                    if (raw.includes(rule.keyword) || stripped.includes(rule.keyword)) {
+                        return rule.canonical;
+                    }
+                }
+
+                return raw;
+            }
+
+            canonicalizeIngredientRatios(ratioDefs) {
+                const merged = {};
+                ratioDefs.forEach((item) => {
+                    const canonical = this.canonicalizeIngredientName(item.ingredient);
+                    const ratio = Number(item.ratio);
+                    if (!canonical || !Number.isFinite(ratio) || ratio <= 0) return;
+                    merged[canonical] = (merged[canonical] || 0) + ratio;
+                });
+
+                const mergedList = Object.entries(merged).map(([ingredient, ratio]) => ({ ingredient, ratio }));
+                const totalRatio = mergedList.reduce((sum, item) => sum + item.ratio, 0);
+                if (!Number.isFinite(totalRatio) || totalRatio <= 0) return [];
+                return mergedList.map((item) => ({
+                    ingredient: item.ingredient,
+                    ratio: item.ratio / totalRatio
+                }));
             }
 
             calculateIngredientRatios(ingredients) {
@@ -386,7 +471,7 @@
                     products.forEach((product) => {
                         const productName = String(product.product_name || "").trim();
                         const sourceIngredients = Array.isArray(product.ingredients) ? product.ingredients : [];
-                        const ratioDefs = this.calculateIngredientRatios(sourceIngredients);
+                        const ratioDefs = this.canonicalizeIngredientRatios(this.calculateIngredientRatios(sourceIngredients));
                         if (!productName || ratioDefs.length === 0) return;
 
                         if (!this.productDB[productName]) {
@@ -524,7 +609,7 @@
             resolveDrugToIngredients(drugName, amountMg) {
                 const matchedProductKey = this.findKeyByNormalizedName(this.productDB, drugName);
                 if (matchedProductKey) {
-                    const ingredientDefs = this.productDB[matchedProductKey];
+                    const ingredientDefs = this.canonicalizeIngredientRatios(this.productDB[matchedProductKey]);
                     const ratioTotal = ingredientDefs.reduce((sum, item) => sum + item.ratio, 0) || 1;
                     return {
                         sourceName: matchedProductKey,
@@ -536,7 +621,8 @@
                     };
                 }
 
-                const matchedIngredientKey = this.findKeyByNormalizedName(this.ingredientDB, drugName);
+                const canonicalDrugName = this.canonicalizeIngredientName(drugName);
+                const matchedIngredientKey = this.findKeyByNormalizedName(this.ingredientDB, canonicalDrugName);
                 if (matchedIngredientKey) {
                     return {
                         sourceName: matchedIngredientKey,
@@ -547,13 +633,14 @@
 
                 return {
                     sourceName: `${drugName} (データ未登録)`,
-                    ingredients: [{ ingredient: drugName, ratio: 1 }],
+                    ingredients: [{ ingredient: canonicalDrugName || drugName, ratio: 1 }],
                     totalAmountMg: amountMg
                 };
             }
 
             getIngredientInfo(ingredientName) {
-                const matchedKey = this.findKeyByNormalizedName(this.ingredientDB, ingredientName);
+                const canonicalName = this.canonicalizeIngredientName(ingredientName);
+                const matchedKey = this.findKeyByNormalizedName(this.ingredientDB, canonicalName);
                 if (matchedKey) return this.ingredientDB[matchedKey];
                 return this.buildUnknownIngredientInfo();
             }
@@ -705,7 +792,11 @@
             }
 
             normalizeName(value) {
-                return String(value).replace(/\s+/g, "").toLowerCase();
+                return String(value)
+                    .normalize("NFKC")
+                    .replace(/[‐‑‒–—―ー−]/g, "-")
+                    .replace(/\s+/g, "")
+                    .toLowerCase();
             }
 
             formatNumber(value, digits = 1) {
