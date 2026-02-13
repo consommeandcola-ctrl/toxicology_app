@@ -303,7 +303,7 @@
                 this.bindEvents();
                 this.populateDrugCandidates();
                 this.renderSymptomChips();
-                this.loadExternalOtcDataset();
+                this.loadExternalDatasets();
             }
 
             bindEvents() {
@@ -457,42 +457,78 @@
                 };
             }
 
-            async loadExternalOtcDataset() {
-                this.setDatasetStatus("外部データセットを読み込み中...");
-                try {
-                    const response = await fetch("data/pmda_otc_products.json", { cache: "no-store" });
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            mergeProductsToDatabase(products) {
+                let addedProducts = 0;
+                let addedIngredients = 0;
 
-                    const payload = await response.json();
-                    const products = Array.isArray(payload.products) ? payload.products : [];
-                    let addedProducts = 0;
-                    let addedIngredients = 0;
+                products.forEach((product) => {
+                    const productName = String(product.product_name || "").trim();
+                    const sourceIngredients = Array.isArray(product.ingredients) ? product.ingredients : [];
+                    const ratioDefs = this.canonicalizeIngredientRatios(this.calculateIngredientRatios(sourceIngredients));
+                    if (!productName || ratioDefs.length === 0) return;
 
-                    products.forEach((product) => {
-                        const productName = String(product.product_name || "").trim();
-                        const sourceIngredients = Array.isArray(product.ingredients) ? product.ingredients : [];
-                        const ratioDefs = this.canonicalizeIngredientRatios(this.calculateIngredientRatios(sourceIngredients));
-                        if (!productName || ratioDefs.length === 0) return;
+                    if (!this.productDB[productName]) {
+                        this.productDB[productName] = ratioDefs;
+                        addedProducts += 1;
+                    }
 
-                        if (!this.productDB[productName]) {
-                            this.productDB[productName] = ratioDefs;
-                            addedProducts += 1;
+                    ratioDefs.forEach((item) => {
+                        if (!this.ingredientDB[item.ingredient]) {
+                            this.ingredientDB[item.ingredient] = this.buildUnknownIngredientInfo();
+                            addedIngredients += 1;
                         }
-
-                        ratioDefs.forEach((item) => {
-                            if (!this.ingredientDB[item.ingredient]) {
-                                this.ingredientDB[item.ingredient] = this.buildUnknownIngredientInfo();
-                                addedIngredients += 1;
-                            }
-                        });
                     });
+                });
 
-                    this.populateDrugCandidates();
-                    this.datasetLoaded = true;
-                    this.setDatasetStatus(`PMDAデータ読込完了: 製品 ${addedProducts} 件 / 新規成分 ${addedIngredients} 件`, "success");
+                return { addedProducts, addedIngredients };
+            }
+
+            async loadDatasetFile(path, label) {
+                const response = await fetch(path, { cache: "no-store" });
+                if (!response.ok) throw new Error(`${label}: HTTP ${response.status}`);
+
+                const payload = await response.json();
+                const products = Array.isArray(payload.products) ? payload.products : [];
+                const merged = this.mergeProductsToDatabase(products);
+                return {
+                    label,
+                    loadedProducts: products.length,
+                    addedProducts: merged.addedProducts,
+                    addedIngredients: merged.addedIngredients
+                };
+            }
+
+            async loadExternalDatasets() {
+                this.setDatasetStatus("外部データセットを読み込み中...");
+                const loaded = [];
+
+                try {
+                    loaded.push(await this.loadDatasetFile("data/pmda_otc_products.json", "PMDA-OTC"));
                 } catch (error) {
-                    this.setDatasetStatus("外部データセットを読み込めませんでした（内蔵データのみ利用）", "warn");
+                    // 読み込み失敗時は次のデータセットへ継続
                 }
+
+                try {
+                    loaded.push(await this.loadDatasetFile("data/pmda_iyaku_products.json", "PMDA-医療用"));
+                } catch (error) {
+                    // 読み込み失敗時は内蔵データのみで継続
+                }
+
+                this.populateDrugCandidates();
+                this.datasetLoaded = loaded.length > 0;
+
+                if (loaded.length === 0) {
+                    this.setDatasetStatus("外部データセットを読み込めませんでした（内蔵データのみ利用）", "warn");
+                    return;
+                }
+
+                const totalAddedProducts = loaded.reduce((sum, item) => sum + item.addedProducts, 0);
+                const totalAddedIngredients = loaded.reduce((sum, item) => sum + item.addedIngredients, 0);
+                const sourceLabel = loaded.map((item) => item.label).join(" / ");
+                this.setDatasetStatus(
+                    `${sourceLabel} 読込完了: 製品 +${totalAddedProducts} 件 / 新規成分 +${totalAddedIngredients} 件`,
+                    "success"
+                );
             }
 
             renderSymptomChips() {
