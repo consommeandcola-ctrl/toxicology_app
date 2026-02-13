@@ -3,148 +3,1524 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ToxicNavi - 中毒診療支援ツール ver.1.0.0 (2026/02/13 18:30)</title>
+    <title>ToxicNavi - 中毒診療フロー支援</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .severity-high { background-color: #fee2e2; border-left: 4px solid #ef4444; }
-        .severity-mid { background-color: #fef3c7; border-left: 4px solid #f59e0b; }
-        .status-badge { @apply px-2 py-1 rounded text-xs font-bold; }
+        .severity-critical { background: #7f1d1d; color: #fff; }
+        .severity-high { background: #dc2626; color: #fff; }
+        .severity-mid { background: #f59e0b; color: #fff; }
+        .severity-low { background: #0ea5e9; color: #fff; }
+        .severity-minimal { background: #16a34a; color: #fff; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900 min-h-screen pb-20">
-
-    <header class="bg-slate-800 text-white p-4 shadow-lg">
-        <div class="container mx-auto flex justify-between items-center">
+<body class="bg-slate-50 text-slate-900 min-h-screen pb-16">
+    <header class="bg-slate-800 text-white shadow-lg">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <h1 class="text-xl font-bold flex items-center gap-2">
-                🧪 ToxicNavi <span class="text-sm font-normal opacity-75">中毒診療支援</span>
+                <span>🧪 ToxicNavi</span>
+                <span class="text-sm font-normal opacity-80">薬剤中毒 初期診療ワークフロー</span>
             </h1>
-            <div class="text-xs text-right">
-                患者体重: <input type="number" id="patientWeight" value="60" class="bg-slate-700 border-none rounded px-2 w-16"> kg
-            </div>
+            <p class="text-xs text-amber-200">
+                教育・トレーニング用。実臨床では中毒情報センター/専門医コンサルトを優先してください。
+            </p>
         </div>
     </header>
 
-    <main class="container mx-auto p-4 max-w-4xl">
-        <section class="mb-6 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-            <h2 class="text-lg font-bold mb-4 border-b pb-2">1. 摂取薬剤・量の入力</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <input type="text" id="drugInput" placeholder="薬剤名 (例: アセトアミノフェン)" class="border p-2 rounded">
-                <input type="number" id="amountInput" placeholder="摂取量 (mg)" class="border p-2 rounded">
-                <button onclick="app.addDrug()" class="bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition">
-                    リストに追加
-                </button>
+    <main class="max-w-6xl mx-auto p-4 space-y-6">
+        <section class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
+            <h2 class="text-lg font-bold mb-4 border-b pb-2">1) 患者背景と現症入力</h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <label class="text-sm font-medium">
+                    体重 (kg)
+                    <input id="patientWeight" type="number" min="1" value="60" class="mt-1 w-full border rounded p-2">
+                </label>
+                <label class="text-sm font-medium">
+                    摂取からの時間 (分)
+                    <input id="elapsedMinutes" type="number" min="0" value="90" class="mt-1 w-full border rounded p-2">
+                </label>
+                <label class="text-sm font-medium md:col-span-2">
+                    患者症状（カンマ区切り）
+                    <input id="observedSymptoms" type="text" placeholder="例: 嘔吐, 意識障害, 頻脈" class="mt-1 w-full border rounded p-2">
+                </label>
+            </div>
+            <div class="mt-3 flex items-center gap-2">
+                <input id="airwaySecured" type="checkbox" class="h-4 w-4">
+                <label for="airwaySecured" class="text-sm">気道確保済み（胃洗浄の安全性評価に使用）</label>
+            </div>
+            <div class="mt-3">
+                <p class="text-xs text-slate-500 mb-2">症状クイック入力</p>
+                <div id="symptomChips" class="flex flex-wrap gap-2"></div>
             </div>
         </section>
 
-        <section class="mb-6">
-            <h2 class="text-lg font-bold mb-4">2. 優先順位・重症度推察 (自動ソート)</h2>
-            <div id="drugList" class="space-y-3">
-                <p class="text-slate-400 text-center py-10">薬剤を入力してください</p>
-            </div>
-        </section>
-
-        <section id="treatmentSection" class="hidden bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-            <h2 class="text-lg font-bold mb-4 border-b pb-2 text-red-600">3. 治療妥当性の検証マトリクス</h2>
-            <div id="treatmentDetails" class="space-y-6">
+        <section class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
+            <h2 class="text-lg font-bold mb-4 border-b pb-2">2) 摂取薬剤入力（製剤名/成分名、内服量）</h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <label class="text-sm font-medium md:col-span-2">
+                    薬剤名（製剤名 or 成分名）
+                    <input id="drugInput" list="drugCandidates" type="text" placeholder="例: カロナール錠500" class="mt-1 w-full border rounded p-2">
+                </label>
+                <datalist id="drugCandidates"></datalist>
+                <label class="text-sm font-medium">
+                    内服量 (mg)
+                    <input id="amountInput" type="number" min="0" placeholder="例: 10000" class="mt-1 w-full border rounded p-2">
+                </label>
+                <div class="flex items-end gap-2">
+                    <button id="addDrugBtn" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition">
+                        追加
+                    </button>
+                    <button id="clearBtn" class="w-full bg-slate-200 text-slate-700 font-bold py-2 px-4 rounded hover:bg-slate-300 transition">
+                        全消去
+                    </button>
                 </div>
+            </div>
+            <p id="datasetStatus" class="mt-3 text-xs text-slate-500">
+                外部データセット: 読み込み中...
+            </p>
+        </section>
+
+        <section class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
+            <h2 class="text-lg font-bold mb-3 border-b pb-2">3) 診療フロー（自動化している処理）</h2>
+            <ol class="list-decimal pl-5 text-sm text-slate-700 space-y-1">
+                <li>入力した薬剤名から製剤データを参照し、含有成分を展開</li>
+                <li>成分ごとの毒性閾値（中毒量 mg/kg）を参照</li>
+                <li>内服量と体重から摂取量 mg/kg を算出し、重症度を推定</li>
+                <li>重症度スコアで危険度順にソート</li>
+                <li>予測症状と患者症状の一致を評価</li>
+                <li>拮抗薬・胃洗浄・活性炭・血液浄化・その他治療の妥当性を理由付きで判定</li>
+            </ol>
+        </section>
+
+        <section class="bg-indigo-50 border border-indigo-200 rounded-xl shadow-sm p-5">
+            <h2 class="text-lg font-bold mb-3 border-b border-indigo-200 pb-2 text-indigo-900">JPIC互換データモデル</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                <div class="bg-white border border-indigo-100 rounded p-3">
+                    <p class="font-semibold">中毒量閾値</p>
+                    <p class="text-slate-700">注意量 / 中毒量 / 重症量 / 危機量（mg/kg）</p>
+                </div>
+                <div class="bg-white border border-indigo-100 rounded p-3">
+                    <p class="font-semibold">中毒症状タイムライン</p>
+                    <p class="text-slate-700">時間帯別の想定症状・赤旗所見</p>
+                </div>
+                <div class="bg-white border border-indigo-100 rounded p-3">
+                    <p class="font-semibold">体内動態</p>
+                    <p class="text-slate-700">Tmax / 半減期 / 分布容積 / 蛋白結合 / 代謝排泄</p>
+                </div>
+                <div class="bg-white border border-indigo-100 rounded p-3">
+                    <p class="font-semibold">分析・解釈</p>
+                    <p class="text-slate-700">推奨検査・測定タイミング・判定の考え方</p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="text-lg font-bold mb-3">4) 重症度ランキング（高リスク順）</h2>
+            <div id="priorityList" class="space-y-3">
+                <p class="text-slate-400 text-center py-10 bg-white rounded-xl border border-slate-200">
+                    薬剤を追加するとここに解析結果が表示されます
+                </p>
+            </div>
+        </section>
+
+        <section id="treatmentSection" class="hidden bg-white border border-slate-200 rounded-xl shadow-sm p-5">
+            <h2 class="text-lg font-bold mb-4 border-b pb-2 text-red-700">5) 治療妥当性の検証</h2>
+            <div id="treatmentMatrix" class="space-y-6"></div>
         </section>
     </main>
 
     <script>
-        // [設計理由]: 複雑な医療ロジックとUIの状態を同期させるため、OOP(Class)による状態管理を採用。
-        
-        class ToxicNavi {
+        class ToxicNaviApp {
             constructor() {
-                this.drugs = [];
-                this.patientWeight = 60;
-                // マスターデータ（本来は外部APIや膨大なJSONにする）
-                this.masterData = {
-                    "アセトアミノフェン": { comp: "Acetaminophen", toxicDose: 150, unit: "mg/kg", symptoms: "嘔気, 肝不全", antidote: "N-アセチルシステイン", charcoal: true, lavage: true, dialysis: false },
-                    "カフェイン": { comp: "Caffeine", toxicDose: 15, unit: "mg/kg", symptoms: "頻脈, 興奮, 不整脈", antidote: "なし(対症療法)", charcoal: true, lavage: true, dialysis: true },
-                    "ジアゼパム": { comp: "Diazepam", toxicDose: 0.5, unit: "mg/kg", symptoms: "意識障害, 呼吸抑制", antidote: "フルマゼニル", charcoal: true, lavage: false, dialysis: false }
+                this.entries = [];
+                this.entryCounter = 1;
+                this.commonSymptoms = [
+                    "嘔気", "嘔吐", "腹痛", "頻脈", "低血圧", "痙攣", "意識障害",
+                    "呼吸抑制", "不整脈", "代謝性アシドーシス", "耳鳴", "発汗"
+                ];
+
+                this.productDB = {
+                    "カロナール錠500": [{ ingredient: "アセトアミノフェン", ratio: 1 }],
+                    "バファリンA": [{ ingredient: "アスピリン", ratio: 0.85 }, { ingredient: "カフェイン", ratio: 0.15 }],
+                    "エスタロンモカ": [{ ingredient: "カフェイン", ratio: 1 }],
+                    "セルシン錠": [{ ingredient: "ジアゼパム", ratio: 1 }],
+                    "メトグルコ錠": [{ ingredient: "メトホルミン", ratio: 1 }],
+                    "テオドール錠": [{ ingredient: "テオフィリン", ratio: 1 }],
+                    "ブロン配合錠": [{ ingredient: "ジヒドロコデイン", ratio: 0.35 }, { ingredient: "カフェイン", ratio: 0.15 }, { ingredient: "メチルエフェドリン", ratio: 0.5 }],
+                    "不凍液(エチレングリコール)": [{ ingredient: "エチレングリコール", ratio: 1 }]
+                };
+
+                this.ingredientDB = {
+                    "アセトアミノフェン": {
+                        component: "Acetaminophen",
+                        toxicDoseMgKg: 150,
+                        severeDoseMgKg: 250,
+                        criticalDoseMgKg: 300,
+                        symptoms: ["嘔気", "嘔吐", "腹痛", "肝機能障害", "意識障害"],
+                        criticalSymptoms: ["意識障害"],
+                        antidote: { name: "N-アセチルシステイン", indication: "摂取量 150 mg/kg 超、または血中濃度で治療域超過" },
+                        lavage: { allow: true, windowMin: 60, note: "致死量が疑われる早期例でのみ検討" },
+                        charcoal: { allow: true, windowMin: 120, extendedWindowMin: 240, note: "徐放製剤では延長して検討" },
+                        dialysis: { effective: false, indication: "通常は適応外" },
+                        otherTreatments: [
+                            { name: "血中濃度測定", severityMin: 2, note: "4時間以降の濃度を評価して治療継続判断" },
+                            { name: "肝機能/凝固モニタリング", severityMin: 2, note: "AST/ALT/INRを連続評価" }
+                        ]
+                    },
+                    "アスピリン": {
+                        component: "Aspirin",
+                        toxicDoseMgKg: 150,
+                        severeDoseMgKg: 300,
+                        criticalDoseMgKg: 500,
+                        symptoms: ["過換気", "耳鳴", "嘔吐", "発熱", "意識障害"],
+                        criticalSymptoms: ["意識障害", "過換気"],
+                        antidote: { name: "特異的拮抗薬なし", indication: "尿アルカリ化・支持療法が中心" },
+                        lavage: { allow: true, windowMin: 60, note: "大量摂取で1時間以内なら検討" },
+                        charcoal: { allow: true, windowMin: 120, extendedWindowMin: 240, note: "大量摂取時は再投与を検討" },
+                        dialysis: { effective: true, indication: "重症アシドーシス、腎障害、神経症状で適応" },
+                        otherTreatments: [
+                            { name: "尿アルカリ化", severityMin: 3, note: "炭酸水素ナトリウムで排泄促進" },
+                            { name: "体温管理", severityMin: 2, note: "高体温は予後悪化因子" }
+                        ]
+                    },
+                    "カフェイン": {
+                        component: "Caffeine",
+                        toxicDoseMgKg: 15,
+                        severeDoseMgKg: 30,
+                        criticalDoseMgKg: 80,
+                        symptoms: ["頻脈", "興奮", "振戦", "不整脈", "痙攣"],
+                        criticalSymptoms: ["不整脈", "痙攣"],
+                        antidote: { name: "特異的拮抗薬なし", indication: "循環管理と痙攣コントロール" },
+                        lavage: { allow: true, windowMin: 60, note: "高用量摂取直後であれば考慮" },
+                        charcoal: { allow: true, windowMin: 120, extendedWindowMin: 240, note: "早期投与ほど有効" },
+                        dialysis: { effective: true, indication: "難治性不整脈や重篤中毒で検討" },
+                        otherTreatments: [
+                            { name: "不整脈監視", severityMin: 2, note: "持続モニター管理" },
+                            { name: "痙攣時ベンゾジアゼピン", severityMin: 3, symptomAny: ["痙攣"], note: "痙攣管理を優先" }
+                        ]
+                    },
+                    "ジアゼパム": {
+                        component: "Diazepam",
+                        toxicDoseMgKg: 0.5,
+                        severeDoseMgKg: 1.5,
+                        criticalDoseMgKg: 3,
+                        symptoms: ["傾眠", "構語障害", "呼吸抑制", "意識障害"],
+                        criticalSymptoms: ["呼吸抑制", "意識障害"],
+                        antidote: { name: "フルマゼニル", indication: "適応を厳密に評価（依存・痙攣リスクに注意）" },
+                        lavage: { allow: false, windowMin: 0, note: "通常推奨されない" },
+                        charcoal: { allow: true, windowMin: 120, extendedWindowMin: 240, note: "気道保護が前提" },
+                        dialysis: { effective: false, indication: "効果乏しい" },
+                        otherTreatments: [
+                            { name: "気道/呼吸管理", severityMin: 3, symptomAny: ["呼吸抑制"], note: "SpO2低下時は早期介入" }
+                        ]
+                    },
+                    "メトホルミン": {
+                        component: "Metformin",
+                        toxicDoseMgKg: 50,
+                        severeDoseMgKg: 100,
+                        criticalDoseMgKg: 200,
+                        symptoms: ["嘔吐", "腹痛", "頻呼吸", "代謝性アシドーシス", "意識障害"],
+                        criticalSymptoms: ["代謝性アシドーシス", "意識障害"],
+                        antidote: { name: "特異的拮抗薬なし", indication: "乳酸アシドーシス管理が中心" },
+                        lavage: { allow: false, windowMin: 0, note: "通常は適応乏しい" },
+                        charcoal: { allow: true, windowMin: 120, extendedWindowMin: 180, note: "早期例でのみ有効性が期待" },
+                        dialysis: { effective: true, indication: "重度アシドーシス・腎不全で強く推奨" },
+                        otherTreatments: [
+                            { name: "乳酸/血液ガス測定", severityMin: 2, note: "乳酸上昇を連続評価" },
+                            { name: "循環管理", severityMin: 3, note: "ショック徴候へ早期対応" }
+                        ]
+                    },
+                    "テオフィリン": {
+                        component: "Theophylline",
+                        toxicDoseMgKg: 10,
+                        severeDoseMgKg: 20,
+                        criticalDoseMgKg: 40,
+                        symptoms: ["嘔吐", "頻脈", "不整脈", "低血圧", "痙攣"],
+                        criticalSymptoms: ["痙攣", "不整脈"],
+                        antidote: { name: "特異的拮抗薬なし", indication: "痙攣・不整脈管理を優先" },
+                        lavage: { allow: true, windowMin: 60, note: "大量摂取直後で考慮" },
+                        charcoal: { allow: true, windowMin: 120, extendedWindowMin: 360, note: "多回投与の適応を検討" },
+                        dialysis: { effective: true, indication: "重症中毒、痙攣、難治性不整脈で適応" },
+                        otherTreatments: [
+                            { name: "多回活性炭の検討", severityMin: 3, note: "再循環を抑制" },
+                            { name: "痙攣時鎮静治療", severityMin: 3, symptomAny: ["痙攣"], note: "ベンゾジアゼピンを優先" }
+                        ]
+                    },
+                    "ジヒドロコデイン": {
+                        component: "Dihydrocodeine",
+                        toxicDoseMgKg: 1,
+                        severeDoseMgKg: 2,
+                        criticalDoseMgKg: 4,
+                        symptoms: ["縮瞳", "傾眠", "呼吸抑制", "低酸素"],
+                        criticalSymptoms: ["呼吸抑制", "低酸素"],
+                        antidote: { name: "ナロキソン", indication: "呼吸抑制または意識障害で速やかに投与" },
+                        lavage: { allow: false, windowMin: 0, note: "誤嚥リスクを考慮し通常非推奨" },
+                        charcoal: { allow: true, windowMin: 120, extendedWindowMin: 240, note: "気道保護下で検討" },
+                        dialysis: { effective: false, indication: "通常不要" },
+                        otherTreatments: [
+                            { name: "呼吸管理", severityMin: 3, symptomAny: ["呼吸抑制", "低酸素"], note: "換気補助を早期に判断" }
+                        ]
+                    },
+                    "メチルエフェドリン": {
+                        component: "Methylephedrine",
+                        toxicDoseMgKg: 2,
+                        severeDoseMgKg: 5,
+                        criticalDoseMgKg: 10,
+                        symptoms: ["頻脈", "不穏", "高血圧", "不整脈"],
+                        criticalSymptoms: ["不整脈"],
+                        antidote: { name: "特異的拮抗薬なし", indication: "循環動態に応じた対症療法" },
+                        lavage: { allow: true, windowMin: 60, note: "重症摂取直後のみ" },
+                        charcoal: { allow: true, windowMin: 120, extendedWindowMin: 180, note: "早期投与を検討" },
+                        dialysis: { effective: false, indication: "通常効果乏しい" },
+                        otherTreatments: [
+                            { name: "鎮静・循環管理", severityMin: 2, note: "興奮や重度頻脈を制御" }
+                        ]
+                    },
+                    "エチレングリコール": {
+                        component: "Ethylene glycol",
+                        toxicDoseMgKg: 50,
+                        severeDoseMgKg: 100,
+                        criticalDoseMgKg: 150,
+                        symptoms: ["酩酊様症状", "頻呼吸", "代謝性アシドーシス", "腎障害", "意識障害"],
+                        criticalSymptoms: ["代謝性アシドーシス", "意識障害"],
+                        antidote: { name: "ホメピゾール（またはエタノール療法）", indication: "疑い段階で早期開始を検討" },
+                        lavage: { allow: false, windowMin: 0, note: "通常推奨されない" },
+                        charcoal: { allow: false, windowMin: 0, extendedWindowMin: 0, note: "吸着効果が乏しい" },
+                        dialysis: { effective: true, indication: "アシドーシス、腎障害、重症例で積極適応" },
+                        otherTreatments: [
+                            { name: "アシドーシス補正", severityMin: 3, note: "重炭酸投与を検討" },
+                            { name: "腎機能モニタリング", severityMin: 2, note: "Crと尿量を連続評価" }
+                        ]
+                    }
+                };
+
+                this.ingredientSynonyms = {
+                    "ジヒドロコデインリン酸塩": "ジヒドロコデイン",
+                    "ジヒドロコデインリン酸塩水和物": "ジヒドロコデイン",
+                    "無水カフェイン": "カフェイン",
+                    "カフェイン水和物": "カフェイン",
+                    "dl-メチルエフェドリン塩酸塩": "メチルエフェドリン",
+                    "dlメチルエフェドリン塩酸塩": "メチルエフェドリン",
+                    "d-メチルエフェドリン塩酸塩": "メチルエフェドリン",
+                    "l-メチルエフェドリン塩酸塩": "メチルエフェドリン",
+                    "メチルエフェドリン塩酸塩": "メチルエフェドリン",
+                    "アセチルサリチル酸": "アスピリン"
+                };
+                this.ingredientHeuristicSynonyms = [
+                    { keyword: "アセトアミノフェン", canonical: "アセトアミノフェン" },
+                    { keyword: "アスピリン", canonical: "アスピリン" },
+                    { keyword: "カフェイン", canonical: "カフェイン" },
+                    { keyword: "ジヒドロコデイン", canonical: "ジヒドロコデイン" },
+                    { keyword: "メチルエフェドリン", canonical: "メチルエフェドリン" },
+                    { keyword: "ジアゼパム", canonical: "ジアゼパム" },
+                    { keyword: "メトホルミン", canonical: "メトホルミン" },
+                    { keyword: "テオフィリン", canonical: "テオフィリン" },
+                    { keyword: "エチレングリコール", canonical: "エチレングリコール" }
+                ];
+                this.ingredientSynonymIndex = {};
+                Object.entries(this.ingredientSynonyms).forEach(([alias, canonical]) => {
+                    this.ingredientSynonymIndex[this.normalizeName(alias)] = canonical;
+                });
+
+                this.bootstrapJpicSchema();
+                this.datasetLoaded = false;
+                this.bindEvents();
+                this.populateDrugCandidates();
+                this.renderSymptomChips();
+                this.loadExternalDatasets();
+            }
+
+            bindEvents() {
+                document.getElementById("addDrugBtn").addEventListener("click", () => this.addDrug());
+                document.getElementById("clearBtn").addEventListener("click", () => this.clearAll());
+                document.getElementById("amountInput").addEventListener("keydown", (event) => {
+                    if (event.key === "Enter") this.addDrug();
+                });
+                document.getElementById("drugInput").addEventListener("keydown", (event) => {
+                    if (event.key === "Enter") this.addDrug();
+                });
+                document.getElementById("priorityList").addEventListener("click", (event) => {
+                    const button = event.target.closest("[data-remove-id]");
+                    if (!button) return;
+                    this.removeEntry(Number(button.dataset.removeId));
+                });
+            }
+
+            bootstrapJpicSchema() {
+                this.jpicSchemaSpec = {
+                    schemaVersion: "jpic-compatible-v1",
+                    required: [
+                        "ingredientName",
+                        "toxicThresholdMgKg",
+                        "symptomTimeline",
+                        "toxicokinetics",
+                        "treatmentGuide",
+                        "analysis",
+                        "evidence"
+                    ]
+                };
+
+                const jpicMaster = {
+                    "アセトアミノフェン": {
+                        aliases: ["Acetaminophen", "パラセタモール"],
+                        toxicThresholdMgKg: { caution: 75, toxic: 150, severe: 250, critical: 300 },
+                        symptomTimeline: [
+                            { window: "0-4時間", symptoms: ["嘔気", "嘔吐", "発汗"], redFlags: ["反復嘔吐"] },
+                            { window: "4-24時間", symptoms: ["症状一時軽快", "右季肋部痛"], redFlags: ["腹痛増悪"] },
+                            { window: "24-72時間", symptoms: ["肝機能障害", "黄疸", "意識障害"], redFlags: ["意識障害", "低血糖"] }
+                        ],
+                        toxicokinetics: {
+                            tmaxHours: "0.5-2",
+                            halfLifeHours: "2-4",
+                            vdLKg: "0.8-1.0",
+                            proteinBindingPct: "10-25",
+                            metabolism: "主に肝代謝",
+                            elimination: "腎排泄"
+                        },
+                        analysis: {
+                            recommendedTests: ["血中濃度(摂取4時間以降)", "AST/ALT", "PT-INR", "血糖"],
+                            interpretation: "時間と血中濃度をノモグラムで評価",
+                            notes: "重症例では凝固障害と代謝障害を連続評価"
+                        }
+                    },
+                    "アスピリン": {
+                        aliases: ["アセチルサリチル酸", "Aspirin"],
+                        toxicThresholdMgKg: { caution: 100, toxic: 150, severe: 300, critical: 500 },
+                        symptomTimeline: [
+                            { window: "0-6時間", symptoms: ["嘔吐", "耳鳴", "過換気"], redFlags: ["過換気"] },
+                            { window: "6-24時間", symptoms: ["代謝性アシドーシス", "発熱", "脱水"], redFlags: ["意識障害"] },
+                            { window: "24時間以降", symptoms: ["肺水腫", "腎障害", "中枢抑制"], redFlags: ["低血圧", "意識障害"] }
+                        ],
+                        toxicokinetics: {
+                            tmaxHours: "1-4",
+                            halfLifeHours: "2-20(用量依存)",
+                            vdLKg: "0.2",
+                            proteinBindingPct: "80-90",
+                            metabolism: "肝代謝",
+                            elimination: "腎排泄(尿アルカリ化で促進)"
+                        },
+                        analysis: {
+                            recommendedTests: ["血中サリチル酸濃度", "血液ガス", "電解質", "腎機能"],
+                            interpretation: "濃度と酸塩基平衡を合わせて重症度評価",
+                            notes: "反復測定で上昇トレンドを確認"
+                        }
+                    },
+                    "カフェイン": {
+                        aliases: ["無水カフェイン", "Caffeine"],
+                        toxicThresholdMgKg: { caution: 8, toxic: 15, severe: 30, critical: 80 },
+                        symptomTimeline: [
+                            { window: "0-4時間", symptoms: ["嘔吐", "振戦", "頻脈"], redFlags: ["不整脈"] },
+                            { window: "4-12時間", symptoms: ["興奮", "低K血症", "不整脈"], redFlags: ["痙攣"] },
+                            { window: "12時間以降", symptoms: ["代謝障害", "循環不全"], redFlags: ["難治性不整脈"] }
+                        ],
+                        toxicokinetics: {
+                            tmaxHours: "0.5-1.5",
+                            halfLifeHours: "3-6",
+                            vdLKg: "0.6",
+                            proteinBindingPct: "10-35",
+                            metabolism: "肝代謝(CYP1A2)",
+                            elimination: "腎排泄"
+                        },
+                        analysis: {
+                            recommendedTests: ["血清K", "乳酸", "心電図モニタ", "血中カフェイン濃度(可能なら)"],
+                            interpretation: "電解質異常と不整脈の評価を優先",
+                            notes: "重症例では血液浄化の適応を検討"
+                        }
+                    },
+                    "ジヒドロコデイン": {
+                        aliases: ["ジヒドロコデインリン酸塩", "Dihydrocodeine"],
+                        toxicThresholdMgKg: { caution: 0.5, toxic: 1.0, severe: 2.0, critical: 4.0 },
+                        symptomTimeline: [
+                            { window: "0-2時間", symptoms: ["傾眠", "縮瞳"], redFlags: ["呼吸抑制"] },
+                            { window: "2-8時間", symptoms: ["呼吸抑制", "低酸素"], redFlags: ["意識障害"] },
+                            { window: "8時間以降", symptoms: ["遷延性低換気"], redFlags: ["再鎮静"] }
+                        ],
+                        toxicokinetics: {
+                            tmaxHours: "1-2",
+                            halfLifeHours: "3-5",
+                            vdLKg: "2-4",
+                            proteinBindingPct: "20-30",
+                            metabolism: "肝代謝",
+                            elimination: "腎排泄"
+                        },
+                        analysis: {
+                            recommendedTests: ["SpO2", "呼気CO2", "血液ガス", "意識レベル"],
+                            interpretation: "呼吸抑制の有無が治療判断の主軸",
+                            notes: "ナロキソン投与後の再抑制に注意"
+                        }
+                    },
+                    "メトホルミン": {
+                        aliases: ["Metformin"],
+                        toxicThresholdMgKg: { caution: 30, toxic: 50, severe: 100, critical: 200 },
+                        symptomTimeline: [
+                            { window: "0-6時間", symptoms: ["嘔吐", "腹痛"], redFlags: ["頻呼吸"] },
+                            { window: "6-24時間", symptoms: ["乳酸アシドーシス", "循環不全"], redFlags: ["ショック"] },
+                            { window: "24時間以降", symptoms: ["腎機能悪化", "意識障害"], redFlags: ["昏睡"] }
+                        ],
+                        toxicokinetics: {
+                            tmaxHours: "2-3",
+                            halfLifeHours: "4-8",
+                            vdLKg: "1-5",
+                            proteinBindingPct: "ほぼ0",
+                            metabolism: "ほぼ代謝されない",
+                            elimination: "腎排泄"
+                        },
+                        analysis: {
+                            recommendedTests: ["乳酸", "血液ガス", "腎機能", "血糖"],
+                            interpretation: "重症アシドーシスは血液浄化適応",
+                            notes: "循環動態のモニタリングを優先"
+                        }
+                    },
+                    "テオフィリン": {
+                        aliases: ["Theophylline"],
+                        toxicThresholdMgKg: { caution: 5, toxic: 10, severe: 20, critical: 40 },
+                        symptomTimeline: [
+                            { window: "0-4時間", symptoms: ["嘔吐", "頻脈"], redFlags: ["不整脈"] },
+                            { window: "4-12時間", symptoms: ["振戦", "低血圧", "痙攣"], redFlags: ["痙攣"] },
+                            { window: "12時間以降", symptoms: ["循環不全", "難治性不整脈"], redFlags: ["ショック"] }
+                        ],
+                        toxicokinetics: {
+                            tmaxHours: "1-2",
+                            halfLifeHours: "6-12",
+                            vdLKg: "0.5",
+                            proteinBindingPct: "40",
+                            metabolism: "肝代謝",
+                            elimination: "腎排泄"
+                        },
+                        analysis: {
+                            recommendedTests: ["血中テオフィリン濃度", "心電図", "血清K", "血糖"],
+                            interpretation: "濃度・痙攣・不整脈で重症度判断",
+                            notes: "多回活性炭や血液浄化を早期検討"
+                        }
+                    },
+                    "ジアゼパム": {
+                        aliases: ["Diazepam"],
+                        toxicThresholdMgKg: { caution: 0.3, toxic: 0.5, severe: 1.5, critical: 3.0 },
+                        symptomTimeline: [
+                            { window: "0-2時間", symptoms: ["傾眠", "ふらつき"], redFlags: ["呼吸抑制"] },
+                            { window: "2-12時間", symptoms: ["意識障害", "低換気"], redFlags: ["気道反射低下"] },
+                            { window: "12時間以降", symptoms: ["遷延鎮静"], redFlags: ["再鎮静"] }
+                        ],
+                        toxicokinetics: {
+                            tmaxHours: "0.5-2",
+                            halfLifeHours: "20-50",
+                            vdLKg: "0.8-1.0",
+                            proteinBindingPct: "98",
+                            metabolism: "肝代謝",
+                            elimination: "腎排泄(代謝物)"
+                        },
+                        analysis: {
+                            recommendedTests: ["呼吸状態", "意識レベル", "血液ガス"],
+                            interpretation: "臨床症状中心に評価",
+                            notes: "フルマゼニルは禁忌を十分確認"
+                        }
+                    },
+                    "エチレングリコール": {
+                        aliases: ["Ethylene glycol"],
+                        toxicThresholdMgKg: { caution: 30, toxic: 50, severe: 100, critical: 150 },
+                        symptomTimeline: [
+                            { window: "0-12時間", symptoms: ["酩酊様症状", "嘔吐"], redFlags: ["意識障害"] },
+                            { window: "12-24時間", symptoms: ["代謝性アシドーシス", "頻呼吸"], redFlags: ["重度アシドーシス"] },
+                            { window: "24-72時間", symptoms: ["腎障害", "乏尿"], redFlags: ["腎不全"] }
+                        ],
+                        toxicokinetics: {
+                            tmaxHours: "1-4",
+                            halfLifeHours: "3-8",
+                            vdLKg: "0.6",
+                            proteinBindingPct: "ほぼ0",
+                            metabolism: "アルコール脱水素酵素",
+                            elimination: "腎排泄"
+                        },
+                        analysis: {
+                            recommendedTests: ["血液ガス", "浸透圧ギャップ", "アニオンギャップ", "腎機能"],
+                            interpretation: "代謝性アシドーシスと腎機能で重症度判断",
+                            notes: "ホメピゾール/血液浄化適応を迅速判定"
+                        }
+                    }
+                };
+
+                Object.keys(this.ingredientDB).forEach((ingredientName) => {
+                    const legacy = this.ingredientDB[ingredientName];
+                    const combined = {
+                        ...this.buildLegacyJpicProfile(ingredientName, legacy),
+                        ...(jpicMaster[ingredientName] || {})
+                    };
+                    const normalized = this.normalizeJpicProfile(combined, ingredientName);
+                    legacy.jpic = normalized;
+
+                    if (!Number.isFinite(legacy.toxicDoseMgKg) && Number.isFinite(normalized.toxicThresholdMgKg.toxic)) {
+                        legacy.toxicDoseMgKg = normalized.toxicThresholdMgKg.toxic;
+                    }
+                    if (!Number.isFinite(legacy.severeDoseMgKg) && Number.isFinite(normalized.toxicThresholdMgKg.severe)) {
+                        legacy.severeDoseMgKg = normalized.toxicThresholdMgKg.severe;
+                    }
+                    if (!Number.isFinite(legacy.criticalDoseMgKg) && Number.isFinite(normalized.toxicThresholdMgKg.critical)) {
+                        legacy.criticalDoseMgKg = normalized.toxicThresholdMgKg.critical;
+                    }
+                });
+            }
+
+            buildLegacyJpicProfile(ingredientName, legacy) {
+                const toxic = Number.isFinite(legacy.toxicDoseMgKg) ? legacy.toxicDoseMgKg : null;
+                const severe = Number.isFinite(legacy.severeDoseMgKg) ? legacy.severeDoseMgKg : (toxic ? toxic * 1.5 : null);
+                const critical = Number.isFinite(legacy.criticalDoseMgKg) ? legacy.criticalDoseMgKg : (toxic ? toxic * 2 : null);
+
+                const earlySymptoms = Array.isArray(legacy.symptoms) ? legacy.symptoms.slice(0, 3) : [];
+                const lateSymptoms = Array.isArray(legacy.criticalSymptoms) ? legacy.criticalSymptoms : [];
+
+                return {
+                    schemaVersion: this.jpicSchemaSpec.schemaVersion,
+                    ingredientName,
+                    aliases: [],
+                    toxicThresholdMgKg: {
+                        caution: toxic ? toxic * 0.5 : null,
+                        toxic,
+                        severe,
+                        critical
+                    },
+                    symptomTimeline: [
+                        { window: "0-2時間", symptoms: earlySymptoms, redFlags: [] },
+                        { window: "2-8時間", symptoms: legacy.symptoms || [], redFlags: lateSymptoms },
+                        { window: "8-24時間", symptoms: lateSymptoms.length > 0 ? lateSymptoms : legacy.symptoms || [], redFlags: lateSymptoms }
+                    ],
+                    toxicokinetics: {
+                        tmaxHours: "情報不足",
+                        halfLifeHours: "情報不足",
+                        vdLKg: "情報不足",
+                        proteinBindingPct: "情報不足",
+                        metabolism: "情報不足",
+                        elimination: "情報不足"
+                    },
+                    treatmentGuide: {
+                        decontamination: `${legacy.lavage?.allow ? "胃洗浄検討" : "胃洗浄は通常非推奨"} / ${legacy.charcoal?.allow ? "活性炭検討" : "活性炭は条件確認"}`,
+                        antidote: legacy.antidote?.name || "情報不足",
+                        extracorporeal: legacy.dialysis?.effective ? "血液浄化有効性あり" : "血液浄化有効性低い",
+                        other: "個別症状に応じた支持療法"
+                    },
+                    analysis: {
+                        recommendedTests: ["バイタル", "血液ガス", "電解質"],
+                        interpretation: "臨床症状と摂取量から総合判断",
+                        notes: "必要に応じて中毒情報センターへ確認"
+                    },
+                    evidence: {
+                        source: "JPIC互換内部マスタ（既存ロジック由来）",
+                        updatedAt: "2026-02-13",
+                        level: "training"
+                    }
                 };
             }
 
-            addDrug() {
-                const name = document.getElementById('drugInput').value;
-                const amount = parseFloat(document.getElementById('amountInput').value);
-                this.patientWeight = parseFloat(document.getElementById('patientWeight').value);
+            normalizeJpicProfile(profile, fallbackName = "不明成分") {
+                const raw = profile || {};
+                const thresholds = raw.toxicThresholdMgKg || {};
+                const normalizedTimeline = Array.isArray(raw.symptomTimeline) ? raw.symptomTimeline : [];
 
-                if (!name || !amount) return alert("入力が不完全です");
+                return {
+                    schemaVersion: raw.schemaVersion || this.jpicSchemaSpec.schemaVersion,
+                    ingredientName: raw.ingredientName || fallbackName,
+                    aliases: [...new Set((raw.aliases || []).map((item) => String(item).trim()).filter(Boolean))],
+                    toxicThresholdMgKg: {
+                        caution: Number.isFinite(thresholds.caution) ? thresholds.caution : null,
+                        toxic: Number.isFinite(thresholds.toxic) ? thresholds.toxic : null,
+                        severe: Number.isFinite(thresholds.severe) ? thresholds.severe : null,
+                        critical: Number.isFinite(thresholds.critical) ? thresholds.critical : null
+                    },
+                    symptomTimeline: normalizedTimeline.map((item) => ({
+                        window: String(item.window || "不明"),
+                        symptoms: [...new Set((item.symptoms || []).map((v) => String(v).trim()).filter(Boolean))],
+                        redFlags: [...new Set((item.redFlags || []).map((v) => String(v).trim()).filter(Boolean))]
+                    })),
+                    toxicokinetics: {
+                        tmaxHours: String(raw.toxicokinetics?.tmaxHours || "情報不足"),
+                        halfLifeHours: String(raw.toxicokinetics?.halfLifeHours || "情報不足"),
+                        vdLKg: String(raw.toxicokinetics?.vdLKg || "情報不足"),
+                        proteinBindingPct: String(raw.toxicokinetics?.proteinBindingPct || "情報不足"),
+                        metabolism: String(raw.toxicokinetics?.metabolism || "情報不足"),
+                        elimination: String(raw.toxicokinetics?.elimination || "情報不足")
+                    },
+                    treatmentGuide: {
+                        decontamination: String(raw.treatmentGuide?.decontamination || "情報不足"),
+                        antidote: String(raw.treatmentGuide?.antidote || "情報不足"),
+                        extracorporeal: String(raw.treatmentGuide?.extracorporeal || "情報不足"),
+                        other: String(raw.treatmentGuide?.other || "情報不足")
+                    },
+                    analysis: {
+                        recommendedTests: [...new Set((raw.analysis?.recommendedTests || []).map((v) => String(v).trim()).filter(Boolean))],
+                        interpretation: String(raw.analysis?.interpretation || "情報不足"),
+                        notes: String(raw.analysis?.notes || "")
+                    },
+                    evidence: {
+                        source: String(raw.evidence?.source || "JPIC互換内部マスタ"),
+                        updatedAt: String(raw.evidence?.updatedAt || "不明"),
+                        level: String(raw.evidence?.level || "training")
+                    }
+                };
+            }
 
-                const info = this.masterData[name] || { comp: "不明", toxicDose: 0, symptoms: "不明", unknown: true };
-                
-                // 重症度計算 (摂取量 / 体重)
-                const dosePerKg = amount / this.patientWeight;
-                const severityScore = info.toxicDose ? (dosePerKg / info.toxicDose) : 0;
+            buildUnknownJpicProfile(ingredientName = "不明成分") {
+                return this.normalizeJpicProfile({
+                    ingredientName,
+                    toxicThresholdMgKg: { caution: null, toxic: null, severe: null, critical: null },
+                    symptomTimeline: [{ window: "0-24時間", symptoms: ["情報不足"], redFlags: ["重症徴候があれば直ちに専門相談"] }],
+                    toxicokinetics: {
+                        tmaxHours: "情報不足",
+                        halfLifeHours: "情報不足",
+                        vdLKg: "情報不足",
+                        proteinBindingPct: "情報不足",
+                        metabolism: "情報不足",
+                        elimination: "情報不足"
+                    },
+                    treatmentGuide: {
+                        decontamination: "成分同定後に適応判断",
+                        antidote: "不明",
+                        extracorporeal: "物性情報確認後に判断",
+                        other: "中毒情報センターへ照会"
+                    },
+                    analysis: {
+                        recommendedTests: ["血液ガス", "電解質", "腎機能", "肝機能"],
+                        interpretation: "症候学的に重症度を暫定判定",
+                        notes: "一次情報ソースで再評価"
+                    },
+                    evidence: {
+                        source: "JPIC互換内部マスタ",
+                        updatedAt: "2026-02-13",
+                        level: "unknown"
+                    }
+                }, ingredientName);
+            }
 
-                this.drugs.push({
-                    name, amount, dosePerKg, info, severityScore
+            getJpicProfile(ingredientInfo, ingredientName = "不明成分") {
+                if (ingredientInfo?.jpic) {
+                    return this.normalizeJpicProfile(ingredientInfo.jpic, ingredientName);
+                }
+                return this.buildUnknownJpicProfile(ingredientName);
+            }
+
+            parseHourRangeFromWindow(windowLabel) {
+                const normalized = String(windowLabel || "").replace(/\s+/g, "");
+                const match = normalized.match(/([0-9]+(?:\.[0-9]+)?)\-([0-9]+(?:\.[0-9]+)?)時間/);
+                if (match) {
+                    return { start: Number(match[1]), end: Number(match[2]) };
+                }
+                const single = normalized.match(/([0-9]+(?:\.[0-9]+)?)時間以降/);
+                if (single) {
+                    return { start: Number(single[1]), end: Number.POSITIVE_INFINITY };
+                }
+                return null;
+            }
+
+            assessTimeline(jpicProfile, elapsedMin, observedSymptoms) {
+                const elapsedHour = elapsedMin / 60;
+                const timeline = Array.isArray(jpicProfile?.symptomTimeline) ? jpicProfile.symptomTimeline : [];
+                if (timeline.length === 0) {
+                    return {
+                        phase: "不明",
+                        expectedSymptoms: ["情報不足"],
+                        redFlags: [],
+                        matchedRedFlags: []
+                    };
+                }
+
+                let currentPhase = timeline[0];
+                for (const phase of timeline) {
+                    const range = this.parseHourRangeFromWindow(phase.window);
+                    if (!range) continue;
+                    if (elapsedHour >= range.start && elapsedHour <= range.end) {
+                        currentPhase = phase;
+                        break;
+                    }
+                }
+
+                const matchedRedFlags = (currentPhase.redFlags || []).filter((flag) => {
+                    return observedSymptoms.some((symptom) => symptom.includes(flag) || flag.includes(symptom));
                 });
 
-                // 重症度順にソート
-                this.drugs.sort((a, b) => b.severityScore - a.severityScore);
-                
+                return {
+                    phase: currentPhase.window || "不明",
+                    expectedSymptoms: currentPhase.symptoms || [],
+                    redFlags: currentPhase.redFlags || [],
+                    matchedRedFlags
+                };
+            }
+
+            formatThresholdSummary(thresholds) {
+                const value = (num) => (Number.isFinite(num) ? `${num} mg/kg` : "不明");
+                return `注意 ${value(thresholds?.caution)} / 中毒 ${value(thresholds?.toxic)} / 重症 ${value(thresholds?.severe)} / 危機 ${value(thresholds?.critical)}`;
+            }
+
+            setDatasetStatus(message, tone = "info") {
+                const statusEl = document.getElementById("datasetStatus");
+                if (!statusEl) return;
+                statusEl.textContent = message;
+
+                statusEl.classList.remove("text-slate-500", "text-green-700", "text-amber-700");
+                if (tone === "success") {
+                    statusEl.classList.add("text-green-700");
+                } else if (tone === "warn") {
+                    statusEl.classList.add("text-amber-700");
+                } else {
+                    statusEl.classList.add("text-slate-500");
+                }
+            }
+
+            parseAmountToken(amountText) {
+                const normalized = String(amountText || "")
+                    .replaceAll("％", "%")
+                    .replace(/\s+/g, " ")
+                    .trim();
+                const match = normalized.match(/^([0-9]+(?:\.[0-9]+)?)\s*(mg|g|ml|mL|μg|µg|mcg|%|IU|単位|国際単位|mEq)$/i);
+                if (!match) return null;
+                return {
+                    value: Number(match[1]),
+                    unit: match[2].toLowerCase()
+                };
+            }
+
+            canonicalizeIngredientName(name) {
+                const raw = String(name || "").trim();
+                if (!raw) return "";
+
+                const direct = this.findKeyByNormalizedName(this.ingredientDB, raw);
+                if (direct) return direct;
+
+                const byAlias = this.ingredientSynonymIndex[this.normalizeName(raw)];
+                if (byAlias) return byAlias;
+
+                const stripped = raw
+                    .replace(/（[^）]*）/g, "")
+                    .replace(/\([^)]*\)/g, "")
+                    .replace(/^無水/, "")
+                    .replace(/水和物$/, "")
+                    .replace(/塩酸塩$/, "")
+                    .replace(/リン酸塩$/, "")
+                    .replace(/臭化水素酸塩(?:水和物)?$/, "")
+                    .replace(/マレイン酸塩$/, "")
+                    .replace(/硫酸塩$/, "")
+                    .replace(/^[dDlL]+[-－]?/, "")
+                    .trim();
+
+                if (stripped) {
+                    const directStripped = this.findKeyByNormalizedName(this.ingredientDB, stripped);
+                    if (directStripped) return directStripped;
+                    const byAliasStripped = this.ingredientSynonymIndex[this.normalizeName(stripped)];
+                    if (byAliasStripped) return byAliasStripped;
+                }
+
+                for (const rule of this.ingredientHeuristicSynonyms) {
+                    if (raw.includes(rule.keyword) || stripped.includes(rule.keyword)) {
+                        return rule.canonical;
+                    }
+                }
+
+                return raw;
+            }
+
+            canonicalizeIngredientRatios(ratioDefs) {
+                const merged = {};
+                ratioDefs.forEach((item) => {
+                    const canonical = this.canonicalizeIngredientName(item.ingredient);
+                    const ratio = Number(item.ratio);
+                    if (!canonical || !Number.isFinite(ratio) || ratio <= 0) return;
+                    merged[canonical] = (merged[canonical] || 0) + ratio;
+                });
+
+                const mergedList = Object.entries(merged).map(([ingredient, ratio]) => ({ ingredient, ratio }));
+                const totalRatio = mergedList.reduce((sum, item) => sum + item.ratio, 0);
+                if (!Number.isFinite(totalRatio) || totalRatio <= 0) return [];
+                return mergedList.map((item) => ({
+                    ingredient: item.ingredient,
+                    ratio: item.ratio / totalRatio
+                }));
+            }
+
+            calculateIngredientRatios(ingredients) {
+                const normalized = ingredients.map((item) => {
+                    const ingredient = String(item.name || "")
+                        .trim()
+                        .replace(/^[・\-]+/, "")
+                        .replace(/\s+/g, " ");
+                    const parsed = this.parseAmountToken(item.amount || "");
+                    return { ingredient, parsed };
+                }).filter((item) => item.ingredient);
+
+                if (normalized.length === 0) return [];
+
+                const parsedOnly = normalized.filter((item) => item.parsed && Number.isFinite(item.parsed.value) && item.parsed.value > 0);
+                const unitSet = new Set(parsedOnly.map((item) => item.parsed.unit));
+                const canWeighted = parsedOnly.length === normalized.length && unitSet.size === 1;
+
+                if (canWeighted) {
+                    const total = parsedOnly.reduce((sum, item) => sum + item.parsed.value, 0);
+                    if (total > 0) {
+                        return normalized.map((item) => ({
+                            ingredient: item.ingredient,
+                            ratio: item.parsed.value / total
+                        }));
+                    }
+                }
+
+                const equalRatio = 1 / normalized.length;
+                return normalized.map((item) => ({
+                    ingredient: item.ingredient,
+                    ratio: equalRatio
+                }));
+            }
+
+            buildUnknownIngredientInfo(ingredientName = "不明成分") {
+                return {
+                    component: "Unknown",
+                    toxicDoseMgKg: null,
+                    severeDoseMgKg: null,
+                    criticalDoseMgKg: null,
+                    symptoms: ["情報不足"],
+                    criticalSymptoms: [],
+                    antidote: { name: "要情報確認", indication: "製剤情報、成分、毒性データを至急確認" },
+                    lavage: { allow: false, windowMin: 0, note: "毒性不明のため慎重判断" },
+                    charcoal: { allow: false, windowMin: 0, extendedWindowMin: 0, note: "適応可否を確認" },
+                    dialysis: { effective: false, indication: "成分特性の確認が必要" },
+                    otherTreatments: [{ name: "中毒情報センターへ照会", severityMin: 1, note: "不明成分は一次情報を収集" }],
+                    jpic: this.buildUnknownJpicProfile(ingredientName),
+                    unknown: true
+                };
+            }
+
+            mergeProductsToDatabase(products) {
+                let addedProducts = 0;
+                let addedIngredients = 0;
+
+                products.forEach((product) => {
+                    const productName = String(product.product_name || "").trim();
+                    const sourceIngredients = Array.isArray(product.ingredients) ? product.ingredients : [];
+                    const ratioDefs = this.canonicalizeIngredientRatios(this.calculateIngredientRatios(sourceIngredients));
+                    if (!productName || ratioDefs.length === 0) return;
+
+                    if (!this.productDB[productName]) {
+                        this.productDB[productName] = ratioDefs;
+                        addedProducts += 1;
+                    }
+
+                    ratioDefs.forEach((item) => {
+                        if (!this.ingredientDB[item.ingredient]) {
+                            this.ingredientDB[item.ingredient] = this.buildUnknownIngredientInfo(item.ingredient);
+                            addedIngredients += 1;
+                        }
+                    });
+                });
+
+                return { addedProducts, addedIngredients };
+            }
+
+            async loadDatasetFile(path, label) {
+                const response = await fetch(path, { cache: "no-store" });
+                if (!response.ok) throw new Error(`${label}: HTTP ${response.status}`);
+
+                const payload = await response.json();
+                const products = Array.isArray(payload.products) ? payload.products : [];
+                const merged = this.mergeProductsToDatabase(products);
+                return {
+                    label,
+                    loadedProducts: products.length,
+                    addedProducts: merged.addedProducts,
+                    addedIngredients: merged.addedIngredients
+                };
+            }
+
+            async loadExternalDatasets() {
+                this.setDatasetStatus("外部データセットを読み込み中...");
+                const loaded = [];
+
+                try {
+                    loaded.push(await this.loadDatasetFile("data/pmda_otc_products.json", "PMDA-OTC"));
+                } catch (error) {
+                    // 読み込み失敗時は次のデータセットへ継続
+                }
+
+                try {
+                    loaded.push(await this.loadDatasetFile("data/pmda_iyaku_products.json", "PMDA-医療用"));
+                } catch (error) {
+                    // 読み込み失敗時は内蔵データのみで継続
+                }
+
+                this.populateDrugCandidates();
+                this.datasetLoaded = loaded.length > 0;
+
+                if (loaded.length === 0) {
+                    this.setDatasetStatus("外部データセットを読み込めませんでした（内蔵データのみ利用）", "warn");
+                    return;
+                }
+
+                const totalAddedProducts = loaded.reduce((sum, item) => sum + item.addedProducts, 0);
+                const totalAddedIngredients = loaded.reduce((sum, item) => sum + item.addedIngredients, 0);
+                const sourceLabel = loaded.map((item) => item.label).join(" / ");
+                this.setDatasetStatus(
+                    `${sourceLabel} 読込完了: 製品 +${totalAddedProducts} 件 / 新規成分 +${totalAddedIngredients} 件`,
+                    "success"
+                );
+            }
+
+            renderSymptomChips() {
+                const chipArea = document.getElementById("symptomChips");
+                chipArea.innerHTML = this.commonSymptoms.map((symptom) => `
+                    <button type="button" class="text-xs border border-slate-300 rounded-full px-3 py-1 hover:bg-slate-100" data-chip="${this.escapeHTML(symptom)}">
+                        ${this.escapeHTML(symptom)}
+                    </button>
+                `).join("");
+
+                chipArea.addEventListener("click", (event) => {
+                    const chip = event.target.closest("[data-chip]");
+                    if (!chip) return;
+                    this.appendSymptom(chip.dataset.chip);
+                });
+            }
+
+            appendSymptom(symptom) {
+                const symptomInput = document.getElementById("observedSymptoms");
+                const currentSymptoms = this.parseSymptoms(symptomInput.value);
+                if (!currentSymptoms.includes(symptom)) {
+                    currentSymptoms.push(symptom);
+                    symptomInput.value = currentSymptoms.join(", ");
+                }
+            }
+
+            populateDrugCandidates() {
+                const datalist = document.getElementById("drugCandidates");
+                const candidates = [
+                    ...Object.keys(this.productDB),
+                    ...Object.keys(this.ingredientDB)
+                ].sort((a, b) => a.localeCompare(b, "ja"));
+                datalist.innerHTML = candidates.map((name) => `<option value="${this.escapeHTML(name)}"></option>`).join("");
+            }
+
+            addDrug() {
+                const drugInput = document.getElementById("drugInput");
+                const amountInput = document.getElementById("amountInput");
+                const patientWeight = Number(document.getElementById("patientWeight").value);
+                const elapsedMin = Number(document.getElementById("elapsedMinutes").value);
+                const airwaySecured = document.getElementById("airwaySecured").checked;
+                const observedSymptoms = this.parseSymptoms(document.getElementById("observedSymptoms").value);
+
+                const drugName = drugInput.value.trim();
+                const amountMg = Number(amountInput.value);
+
+                if (!drugName || !Number.isFinite(amountMg) || amountMg <= 0) {
+                    alert("薬剤名と内服量を正しく入力してください。");
+                    return;
+                }
+                if (!Number.isFinite(patientWeight) || patientWeight <= 0) {
+                    alert("体重(kg)を正しく入力してください。");
+                    return;
+                }
+                if (!Number.isFinite(elapsedMin) || elapsedMin < 0) {
+                    alert("摂取からの時間(分)を0以上で入力してください。");
+                    return;
+                }
+
+                const ingestionContext = {
+                    patientWeight,
+                    elapsedMin,
+                    airwaySecured,
+                    observedSymptoms
+                };
+
+                const resolved = this.resolveDrugToIngredients(drugName, amountMg);
+                resolved.ingredients.forEach((ingredientItem) => {
+                    const amountForIngredient = amountMg * ingredientItem.ratio;
+                    const ingredientInfo = this.getIngredientInfo(ingredientItem.ingredient);
+                    const jpicProfile = this.getJpicProfile(ingredientInfo, ingredientItem.ingredient);
+                    const doseMgKg = amountForIngredient / patientWeight;
+                    const severity = this.classifySeverity(doseMgKg, ingredientInfo);
+                    const predictedSymptoms = ingredientInfo.symptoms || [];
+                    const matchedSymptoms = this.matchSymptoms(predictedSymptoms, observedSymptoms);
+                    const toxicRatio = ingredientInfo.toxicDoseMgKg ? (doseMgKg / ingredientInfo.toxicDoseMgKg) : null;
+                    const timelineAssessment = this.assessTimeline(jpicProfile, elapsedMin, observedSymptoms);
+
+                    const treatment = this.evaluateTreatments({
+                        ingredientInfo,
+                        jpicProfile,
+                        severity,
+                        doseMgKg,
+                        toxicRatio,
+                        context: ingestionContext,
+                        matchedSymptoms
+                    });
+
+                    const riskScore = this.calculateRiskScore(
+                        severity,
+                        toxicRatio,
+                        matchedSymptoms.length,
+                        ingredientInfo.unknown,
+                        timelineAssessment.matchedRedFlags.length
+                    );
+
+                    this.entries.push({
+                        id: this.entryCounter++,
+                        sourceDrug: resolved.sourceName,
+                        inputDrug: drugName,
+                        ingredient: ingredientItem.ingredient,
+                        component: ingredientInfo.component,
+                        ingredientAmountMg: amountForIngredient,
+                        doseMgKg,
+                        toxicRatio,
+                        severity,
+                        predictedSymptoms,
+                        matchedSymptoms,
+                        jpicProfile,
+                        timelineAssessment,
+                        treatment,
+                        riskScore,
+                        unknown: ingredientInfo.unknown
+                    });
+                });
+
+                this.entries.sort((a, b) => b.riskScore - a.riskScore);
+                this.render();
+
+                amountInput.value = "";
+                drugInput.value = "";
+                drugInput.focus();
+            }
+
+            resolveDrugToIngredients(drugName, amountMg) {
+                const matchedProductKey = this.findKeyByNormalizedName(this.productDB, drugName);
+                if (matchedProductKey) {
+                    const ingredientDefs = this.canonicalizeIngredientRatios(this.productDB[matchedProductKey]);
+                    const ratioTotal = ingredientDefs.reduce((sum, item) => sum + item.ratio, 0) || 1;
+                    return {
+                        sourceName: matchedProductKey,
+                        ingredients: ingredientDefs.map((item) => ({
+                            ingredient: item.ingredient,
+                            ratio: item.ratio / ratioTotal
+                        })),
+                        totalAmountMg: amountMg
+                    };
+                }
+
+                const canonicalDrugName = this.canonicalizeIngredientName(drugName);
+                const matchedIngredientKey = this.findKeyByNormalizedName(this.ingredientDB, canonicalDrugName);
+                if (matchedIngredientKey) {
+                    return {
+                        sourceName: matchedIngredientKey,
+                        ingredients: [{ ingredient: matchedIngredientKey, ratio: 1 }],
+                        totalAmountMg: amountMg
+                    };
+                }
+
+                return {
+                    sourceName: `${drugName} (データ未登録)`,
+                    ingredients: [{ ingredient: canonicalDrugName || drugName, ratio: 1 }],
+                    totalAmountMg: amountMg
+                };
+            }
+
+            getIngredientInfo(ingredientName) {
+                const canonicalName = this.canonicalizeIngredientName(ingredientName);
+                const matchedKey = this.findKeyByNormalizedName(this.ingredientDB, canonicalName);
+                if (matchedKey) return this.ingredientDB[matchedKey];
+                return this.buildUnknownIngredientInfo(canonicalName || ingredientName);
+            }
+
+            classifySeverity(doseMgKg, ingredientInfo) {
+                const profile = this.getJpicProfile(ingredientInfo, ingredientInfo?.component || "不明成分");
+                const thresholds = profile.toxicThresholdMgKg || {};
+                const toxicDose = Number.isFinite(ingredientInfo.toxicDoseMgKg) ? ingredientInfo.toxicDoseMgKg : thresholds.toxic;
+                const severeDose = Number.isFinite(ingredientInfo.severeDoseMgKg) ? ingredientInfo.severeDoseMgKg : thresholds.severe;
+                const criticalDose = Number.isFinite(ingredientInfo.criticalDoseMgKg) ? ingredientInfo.criticalDoseMgKg : thresholds.critical;
+
+                if (!Number.isFinite(toxicDose)) {
+                    return { label: "情報不足", rank: 3, badgeClass: "severity-mid", detail: "中毒量データなし" };
+                }
+                if (Number.isFinite(criticalDose) && doseMgKg >= criticalDose) {
+                    return { label: "最重症", rank: 5, badgeClass: "severity-critical", detail: "致死域の可能性" };
+                }
+                if (Number.isFinite(severeDose) && doseMgKg >= severeDose) {
+                    return { label: "重症", rank: 4, badgeClass: "severity-high", detail: "集中治療を要する可能性" };
+                }
+                if (doseMgKg >= toxicDose) {
+                    return { label: "中等症", rank: 3, badgeClass: "severity-mid", detail: "中毒域に到達" };
+                }
+                if (doseMgKg >= toxicDose * 0.5) {
+                    return { label: "軽症", rank: 2, badgeClass: "severity-low", detail: "症状発現に注意" };
+                }
+                return { label: "低リスク", rank: 1, badgeClass: "severity-minimal", detail: "現時点では低リスク" };
+            }
+
+            calculateRiskScore(severity, toxicRatio, matchCount, isUnknown, redFlagCount = 0) {
+                if (isUnknown) return 320 + (matchCount * 8) + (redFlagCount * 12);
+                const ratioScore = toxicRatio ? Math.min(100, toxicRatio * 30) : 0;
+                return severity.rank * 100 + ratioScore + (matchCount * 8) + (redFlagCount * 12);
+            }
+
+            parseSymptoms(symptomText) {
+                if (!symptomText) return [];
+                const parsed = symptomText.split(/[,、\n]/).map((item) => item.trim()).filter(Boolean);
+                return [...new Set(parsed)];
+            }
+
+            matchSymptoms(predicted, observed) {
+                const matches = predicted.filter((predictedSymptom) => {
+                    return observed.some((observedSymptom) => {
+                        return observedSymptom.includes(predictedSymptom) || predictedSymptom.includes(observedSymptom);
+                    });
+                });
+                return [...new Set(matches)];
+            }
+
+            evaluateTreatments(payload) {
+                const { ingredientInfo, jpicProfile, severity, toxicRatio, context, matchedSymptoms } = payload;
+                if (ingredientInfo.unknown) {
+                    return {
+                        antidote: { status: "要情報確認", action: "成分特定を優先", reason: "拮抗薬の適応判定に成分同定が必須" },
+                        lavage: { status: "要情報確認", action: "毒性情報確認後に判断", reason: "毒性・誤嚥リスクの評価が未確定" },
+                        charcoal: { status: "要情報確認", action: "吸着性を確認", reason: "成分の吸着可否データがない" },
+                        dialysis: { status: "要情報確認", action: "血液浄化の有効性を確認", reason: "蛋白結合率/分布容積データが必要" },
+                        others: [
+                            { name: "中毒情報センターへ即時照会", status: "妥当", reason: "不明成分の初期対応として必須" },
+                            { name: "推奨検査", status: "妥当", reason: (jpicProfile?.analysis?.recommendedTests || []).join(", ") || "血液ガス・電解質を中心に評価" }
+                        ]
+                    };
+                }
+
+                const hasCriticalSymptom = matchedSymptoms.some((symptom) => ingredientInfo.criticalSymptoms.includes(symptom));
+                const toxicExceeded = typeof toxicRatio === "number" && toxicRatio >= 1;
+
+                const antidote = (() => {
+                    const action = ingredientInfo.antidote.name;
+                    if (action.includes("なし")) {
+                        return { status: "適応なし", action, reason: ingredientInfo.antidote.indication };
+                    }
+                    if (severity.rank >= 3 || hasCriticalSymptom || toxicExceeded) {
+                        return { status: "妥当", action, reason: `${ingredientInfo.antidote.indication} / ${jpicProfile?.treatmentGuide?.antidote || ""}` };
+                    }
+                    return { status: "条件付き", action, reason: `現時点は低〜軽症。ただし ${ingredientInfo.antidote.indication}` };
+                })();
+
+                const lavage = (() => {
+                    if (!ingredientInfo.lavage.allow) {
+                        return { status: "非推奨", action: "胃洗浄を通常は行わない", reason: ingredientInfo.lavage.note };
+                    }
+                    if (context.elapsedMin > ingredientInfo.lavage.windowMin) {
+                        return { status: "非推奨", action: "適応時間外", reason: `${ingredientInfo.lavage.windowMin} 分を超過` };
+                    }
+                    if (!context.airwaySecured) {
+                        return { status: "慎重", action: "気道確保後に再評価", reason: "誤嚥リスクが高い" };
+                    }
+                    if (severity.rank >= 4 || (typeof toxicRatio === "number" && toxicRatio >= 2)) {
+                        return { status: "妥当", action: "胃洗浄を検討", reason: ingredientInfo.lavage.note };
+                    }
+                    return { status: "条件付き", action: "症状進行時に検討", reason: "重症度が上がれば適応" };
+                })();
+
+                const charcoal = (() => {
+                    if (!ingredientInfo.charcoal.allow) {
+                        return { status: "非推奨", action: "活性炭は効果乏しい", reason: ingredientInfo.charcoal.note };
+                    }
+                    if (context.elapsedMin <= ingredientInfo.charcoal.windowMin) {
+                        return { status: "妥当", action: "活性炭投与を検討", reason: ingredientInfo.charcoal.note };
+                    }
+                    if (context.elapsedMin <= ingredientInfo.charcoal.extendedWindowMin && severity.rank >= 3) {
+                        return { status: "条件付き", action: "遅延投与を検討", reason: "重症例であれば利益が残る可能性" };
+                    }
+                    return { status: "非推奨", action: "投与メリットが限定的", reason: "有効時間を超過" };
+                })();
+
+                const dialysis = (() => {
+                    if (!ingredientInfo.dialysis.effective) {
+                        return { status: "適応なし", action: "血液浄化は通常不要", reason: ingredientInfo.dialysis.indication };
+                    }
+                    if (severity.rank >= 4 || hasCriticalSymptom || (typeof toxicRatio === "number" && toxicRatio >= 2)) {
+                        return { status: "妥当", action: "血液浄化を早期検討", reason: ingredientInfo.dialysis.indication };
+                    }
+                    if (severity.rank >= 3) {
+                        return { status: "条件付き", action: "重症化時に導入検討", reason: ingredientInfo.dialysis.indication };
+                    }
+                    return { status: "慎重", action: "現時点では経過観察", reason: "明確な導入基準に未達" };
+                })();
+
+                const others = ingredientInfo.otherTreatments.map((item) => {
+                    const symptomHit = !item.symptomAny || item.symptomAny.some((symptom) => {
+                        return context.observedSymptoms.some((observed) => observed.includes(symptom) || symptom.includes(observed));
+                    });
+                    const severityHit = severity.rank >= (item.severityMin || 1);
+
+                    let status = "慎重";
+                    if (severityHit && symptomHit) {
+                        status = "妥当";
+                    } else if (severityHit || symptomHit) {
+                        status = "条件付き";
+                    }
+
+                    return {
+                        name: item.name,
+                        status,
+                        reason: item.note
+                    };
+                });
+
+                return { antidote, lavage, charcoal, dialysis, others };
+            }
+
+            removeEntry(id) {
+                this.entries = this.entries.filter((entry) => entry.id !== id);
                 this.render();
             }
 
+            clearAll() {
+                this.entries = [];
+                this.render();
+            }
+
+            findKeyByNormalizedName(objectMap, targetName) {
+                const normalizedTarget = this.normalizeName(targetName);
+                return Object.keys(objectMap).find((key) => this.normalizeName(key) === normalizedTarget) || null;
+            }
+
+            normalizeName(value) {
+                return String(value)
+                    .normalize("NFKC")
+                    .replace(/[‐‑‒–—―ー−]/g, "-")
+                    .replace(/\s+/g, "")
+                    .toLowerCase();
+            }
+
+            formatNumber(value, digits = 1) {
+                return Number(value).toFixed(digits);
+            }
+
+            statusClass(status) {
+                const map = {
+                    "妥当": "bg-green-100 text-green-800",
+                    "条件付き": "bg-amber-100 text-amber-800",
+                    "慎重": "bg-sky-100 text-sky-800",
+                    "非推奨": "bg-rose-100 text-rose-800",
+                    "適応なし": "bg-slate-100 text-slate-700",
+                    "要情報確認": "bg-violet-100 text-violet-800"
+                };
+                return map[status] || "bg-slate-100 text-slate-700";
+            }
+
             render() {
-                const listEl = document.getElementById('drugList');
-                const treatEl = document.getElementById('treatmentSection');
-                const treatDetailEl = document.getElementById('treatmentDetails');
-                
-                listEl.innerHTML = "";
-                treatDetailEl.innerHTML = "";
+                this.renderPriorityList();
+                this.renderTreatmentMatrix();
+            }
 
-                if (this.drugs.length > 0) treatEl.classList.remove('hidden');
+            renderPriorityList() {
+                const container = document.getElementById("priorityList");
+                if (this.entries.length === 0) {
+                    container.innerHTML = `
+                        <p class="text-slate-400 text-center py-10 bg-white rounded-xl border border-slate-200">
+                            薬剤を追加するとここに解析結果が表示されます
+                        </p>
+                    `;
+                    return;
+                }
 
-                this.drugs.forEach((drug, index) => {
-                    const sevClass = drug.severityScore >= 1 ? 'severity-high' : 'severity-mid';
-                    
-                    // リスト表示
-                    listEl.innerHTML += `
-                        <div class="${sevClass} p-4 rounded shadow-sm flex justify-between items-center bg-white">
+                container.innerHTML = this.entries.map((entry, index) => {
+                    const predictedWithoutMatch = entry.predictedSymptoms.filter((symptom) => !entry.matchedSymptoms.includes(symptom));
+                    const matchedText = entry.matchedSymptoms.length > 0 ? entry.matchedSymptoms.join(", ") : "一致なし";
+                    const unmatchedText = predictedWithoutMatch.length > 0 ? predictedWithoutMatch.join(", ") : "主要症状は概ね一致";
+                    const toxicDoseText = entry.unknown ? "不明" : `${entry.toxicRatio ? this.formatNumber(entry.toxicRatio, 2) : "0.00"} x 中毒量`;
+                    const sourceLabel = entry.sourceDrug === entry.ingredient ? "成分直入力" : `製剤: ${entry.sourceDrug}`;
+                    const thresholdText = this.formatThresholdSummary(entry.jpicProfile?.toxicThresholdMgKg || {});
+                    const timelinePhaseText = entry.timelineAssessment?.phase || "不明";
+                    const timelineRedFlags = (entry.timelineAssessment?.redFlags || []).join(", ") || "なし";
+                    const timelineMatchedRedFlags = (entry.timelineAssessment?.matchedRedFlags || []).join(", ") || "一致なし";
+
+                    return `
+                        <article class="bg-white border border-slate-200 rounded-xl shadow-sm p-4">
+                            <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                                <div class="space-y-2">
+                                    <p class="text-xs text-slate-500 font-semibold">優先度 ${index + 1} | ${this.escapeHTML(sourceLabel)}</p>
+                                    <h3 class="text-lg font-bold">
+                                        ${this.escapeHTML(entry.ingredient)}
+                                        <span class="text-sm text-slate-500 font-medium">(${this.escapeHTML(entry.component)})</span>
+                                    </h3>
+                                    <div class="text-sm text-slate-700 space-y-1">
+                                        <p>推定成分量: <span class="font-semibold">${this.formatNumber(entry.ingredientAmountMg, 1)} mg</span></p>
+                                        <p>推定摂取量: <span class="font-semibold">${this.formatNumber(entry.doseMgKg, 2)} mg/kg</span> / 毒性比: <span class="font-semibold">${toxicDoseText}</span></p>
+                                        <p>JPIC互換閾値: <span class="text-indigo-700">${this.escapeHTML(thresholdText)}</span></p>
+                                        <p>経時フェーズ: <span class="font-semibold">${this.escapeHTML(timelinePhaseText)}</span> / 赤旗: <span class="text-rose-700">${this.escapeHTML(timelineRedFlags)}</span> / 一致: <span class="text-green-700">${this.escapeHTML(timelineMatchedRedFlags)}</span></p>
+                                        <p>予測症状: <span class="text-red-700">${this.escapeHTML(entry.predictedSymptoms.join(", "))}</span></p>
+                                        <p>患者症状一致: <span class="text-green-700">${this.escapeHTML(matchedText)}</span></p>
+                                        <p>未一致症状: <span class="text-slate-600">${this.escapeHTML(unmatchedText)}</span></p>
+                                    </div>
+                                </div>
+                                <div class="flex md:flex-col gap-2 items-center md:items-end">
+                                    <span class="px-3 py-1 rounded-full text-xs font-bold ${entry.severity.badgeClass}">
+                                        ${this.escapeHTML(entry.severity.label)}
+                                    </span>
+                                    <span class="text-xs text-slate-500">${this.escapeHTML(entry.severity.detail)}</span>
+                                    <button data-remove-id="${entry.id}" class="text-xs px-3 py-1 rounded border border-slate-300 hover:bg-slate-100">
+                                        この成分を削除
+                                    </button>
+                                </div>
+                            </div>
+                        </article>
+                    `;
+                }).join("");
+            }
+
+            renderTreatmentMatrix() {
+                const section = document.getElementById("treatmentSection");
+                const container = document.getElementById("treatmentMatrix");
+                if (this.entries.length === 0) {
+                    section.classList.add("hidden");
+                    container.innerHTML = "";
+                    return;
+                }
+
+                section.classList.remove("hidden");
+                container.innerHTML = this.entries.map((entry, index) => {
+                    const treatment = entry.treatment;
+                    const otherRows = treatment.others.map((item) => `
+                        <li class="flex items-start gap-2 mb-2">
+                            <span class="text-xs font-bold px-2 py-1 rounded ${this.statusClass(item.status)}">${this.escapeHTML(item.status)}</span>
                             <div>
-                                <span class="text-xs font-bold text-slate-500">No.${index + 1} 優先度高</span>
-                                <h3 class="font-bold text-lg">${drug.name} (${drug.info.comp})</h3>
-                                <p class="text-sm">予測症状: <span class="text-red-600">${drug.info.symptoms}</span></p>
+                                <p class="font-semibold text-sm">${this.escapeHTML(item.name)}</p>
+                                <p class="text-xs text-slate-600">${this.escapeHTML(item.reason)}</p>
                             </div>
-                            <div class="text-right">
-                                <div class="text-2xl font-black">${drug.dosePerKg.toFixed(1)}</div>
-                                <div class="text-xs">mg/kg 摂取</div>
-                            </div>
-                        </div>
-                    `;
+                        </li>
+                    `).join("");
 
-                    // 治療妥当性表示
-                    treatDetailEl.innerHTML += `
-                        <div class="border-l-4 border-slate-800 pl-4 mb-8">
-                            <h3 class="font-black text-xl mb-3 underline">${drug.name} の治療戦略</h3>
-                            <table class="w-full text-sm border-collapse">
-                                <tr class="border-b">
-                                    <td class="py-2 font-bold w-32">拮抗薬</td>
-                                    <td class="py-2">${drug.info.antidote || 'なし'}</td>
-                                </tr>
-                                <tr class="border-b">
-                                    <td class="py-2 font-bold text-blue-600">胃洗浄</td>
-                                    <td class="py-2">${drug.info.lavage ? '✅ 考慮（摂取1時間以内）' : '❌ 非推奨'}</td>
-                                </tr>
-                                <tr class="border-b">
-                                    <td class="py-2 font-bold text-green-600">活性炭</td>
-                                    <td class="py-2">${drug.info.charcoal ? '✅ 推奨' : '⚠️ 禁忌または効果薄'}</td>
-                                </tr>
-                                <tr class="border-b">
-                                    <td class="py-2 font-bold text-purple-600">血液浄化</td>
-                                    <td class="py-2">${drug.info.dialysis ? '✅ 適応検討（重症時）' : '❌ 効果なし'}</td>
-                                </tr>
-                            </table>
-                        </div>
+                    return `
+                        <article class="border border-slate-200 rounded-lg p-4">
+                            <h3 class="font-bold text-base mb-3">
+                                ${index + 1}. ${this.escapeHTML(entry.ingredient)} の治療妥当性
+                            </h3>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm border-collapse">
+                                    <tbody>
+                                        ${this.renderTreatmentRow("拮抗薬", treatment.antidote)}
+                                        ${this.renderTreatmentRow("胃洗浄", treatment.lavage)}
+                                        ${this.renderTreatmentRow("活性炭", treatment.charcoal)}
+                                        ${this.renderTreatmentRow("血液浄化", treatment.dialysis)}
+                                        ${this.renderJpicThresholdRow(entry)}
+                                        ${this.renderJpicTimelineRow(entry)}
+                                        ${this.renderJpicPkRow(entry)}
+                                        ${this.renderJpicAnalysisRow(entry)}
+                                        ${this.renderJpicEvidenceRow(entry)}
+                                        <tr class="border-t">
+                                            <th class="text-left align-top p-2 w-36 bg-slate-50">その他治療</th>
+                                            <td class="p-2">
+                                                <ul>${otherRows}</ul>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </article>
                     `;
-                });
+                }).join("");
+            }
+
+            renderTreatmentRow(label, payload) {
+                return `
+                    <tr class="border-t">
+                        <th class="text-left align-top p-2 w-36 bg-slate-50">${label}</th>
+                        <td class="p-2">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-xs font-bold px-2 py-1 rounded ${this.statusClass(payload.status)}">${this.escapeHTML(payload.status)}</span>
+                                <span class="font-semibold">${this.escapeHTML(payload.action)}</span>
+                            </div>
+                            <p class="text-xs text-slate-600">${this.escapeHTML(payload.reason)}</p>
+                        </td>
+                    </tr>
+                `;
+            }
+
+            renderJpicThresholdRow(entry) {
+                const thresholds = entry.jpicProfile?.toxicThresholdMgKg || {};
+                const displayValue = (value) => (Number.isFinite(value) ? `${value} mg/kg` : "不明");
+                const rowText = `
+                    注意: ${displayValue(thresholds.caution)} /
+                    中毒: ${displayValue(thresholds.toxic)} /
+                    重症: ${displayValue(thresholds.severe)} /
+                    危機: ${displayValue(thresholds.critical)}
+                `.replace(/\s+/g, " ").trim();
+
+                return `
+                    <tr class="border-t">
+                        <th class="text-left align-top p-2 w-36 bg-slate-50">中毒量閾値</th>
+                        <td class="p-2 text-sm text-slate-700">${this.escapeHTML(rowText)}</td>
+                    </tr>
+                `;
+            }
+
+            renderJpicTimelineRow(entry) {
+                const timeline = entry.jpicProfile?.symptomTimeline || [];
+                const phaseRows = timeline.map((phase) => {
+                    const symptoms = (phase.symptoms || []).join(", ") || "情報不足";
+                    const redFlags = (phase.redFlags || []).join(", ") || "なし";
+                    return `
+                        <li class="mb-1">
+                            <span class="font-semibold">${this.escapeHTML(phase.window || "不明")}</span>:
+                            症状 ${this.escapeHTML(symptoms)} / 赤旗 ${this.escapeHTML(redFlags)}
+                        </li>
+                    `;
+                }).join("");
+
+                const current = entry.timelineAssessment || { phase: "不明", matchedRedFlags: [] };
+                const matched = (current.matchedRedFlags || []).join(", ") || "一致なし";
+
+                return `
+                    <tr class="border-t">
+                        <th class="text-left align-top p-2 w-36 bg-slate-50">症状タイムライン</th>
+                        <td class="p-2">
+                            <p class="text-xs text-slate-600 mb-2">現在フェーズ: <span class="font-semibold">${this.escapeHTML(current.phase || "不明")}</span> / 赤旗一致: <span class="text-rose-700">${this.escapeHTML(matched)}</span></p>
+                            <ul class="text-sm text-slate-700">${phaseRows}</ul>
+                        </td>
+                    </tr>
+                `;
+            }
+
+            renderJpicPkRow(entry) {
+                const pk = entry.jpicProfile?.toxicokinetics || {};
+                const text = `Tmax ${pk.tmaxHours || "情報不足"} h / 半減期 ${pk.halfLifeHours || "情報不足"} h / Vd ${pk.vdLKg || "情報不足"} L/kg / 蛋白結合 ${pk.proteinBindingPct || "情報不足"} / 代謝 ${pk.metabolism || "情報不足"} / 排泄 ${pk.elimination || "情報不足"}`;
+                return `
+                    <tr class="border-t">
+                        <th class="text-left align-top p-2 w-36 bg-slate-50">体内動態</th>
+                        <td class="p-2 text-sm text-slate-700">${this.escapeHTML(text)}</td>
+                    </tr>
+                `;
+            }
+
+            renderJpicAnalysisRow(entry) {
+                const analysis = entry.jpicProfile?.analysis || {};
+                const tests = (analysis.recommendedTests || []).join(", ") || "情報不足";
+                const interpretation = analysis.interpretation || "情報不足";
+                const notes = analysis.notes || "なし";
+                return `
+                    <tr class="border-t">
+                        <th class="text-left align-top p-2 w-36 bg-slate-50">分析法・検査</th>
+                        <td class="p-2">
+                            <p class="text-sm text-slate-700"><span class="font-semibold">推奨検査:</span> ${this.escapeHTML(tests)}</p>
+                            <p class="text-sm text-slate-700"><span class="font-semibold">解釈:</span> ${this.escapeHTML(interpretation)}</p>
+                            <p class="text-xs text-slate-600"><span class="font-semibold">補足:</span> ${this.escapeHTML(notes)}</p>
+                        </td>
+                    </tr>
+                `;
+            }
+
+            renderJpicEvidenceRow(entry) {
+                const evidence = entry.jpicProfile?.evidence || {};
+                const text = `出典: ${evidence.source || "不明"} / 更新日: ${evidence.updatedAt || "不明"} / 根拠レベル: ${evidence.level || "不明"}`;
+                return `
+                    <tr class="border-t">
+                        <th class="text-left align-top p-2 w-36 bg-slate-50">根拠情報</th>
+                        <td class="p-2 text-xs text-slate-600">${this.escapeHTML(text)}</td>
+                    </tr>
+                `;
+            }
+
+            escapeHTML(value) {
+                return String(value)
+                    .replaceAll("&", "&amp;")
+                    .replaceAll("<", "&lt;")
+                    .replaceAll(">", "&gt;")
+                    .replaceAll('"', "&quot;")
+                    .replaceAll("'", "&#39;");
             }
         }
 
-        const app = new ToxicNavi();
+        const app = new ToxicNaviApp();
     </script>
 </body>
 </html>
