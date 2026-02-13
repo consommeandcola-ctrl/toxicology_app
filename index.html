@@ -119,42 +119,8 @@
             </div>
         </section>
 
-        <section class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
-            <h2 class="text-lg font-bold mb-3 border-b pb-2">3) 診療フロー（自動化している処理）</h2>
-            <ol class="list-decimal pl-5 text-sm text-slate-700 space-y-1">
-                <li>入力した薬剤名から製剤データを参照し、含有成分を展開</li>
-                <li>成分ごとの毒性閾値（中毒量 mg/kg）を参照</li>
-                <li>内服量と体重から摂取量 mg/kg を算出し、重症度を推定</li>
-                <li>重症度スコアで危険度順にソート</li>
-                <li>予測症状と患者症状の一致を評価</li>
-                <li>拮抗薬・胃洗浄・活性炭・血液浄化・その他治療の妥当性を理由付きで判定</li>
-            </ol>
-        </section>
-
-        <section class="bg-indigo-50 border border-indigo-200 rounded-xl shadow-sm p-5">
-            <h2 class="text-lg font-bold mb-3 border-b border-indigo-200 pb-2 text-indigo-900">JPIC互換データモデル</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                <div class="bg-white border border-indigo-100 rounded p-3">
-                    <p class="font-semibold">中毒量閾値</p>
-                    <p class="text-slate-700">注意量 / 中毒量 / 重症量 / 危機量（mg/kg）</p>
-                </div>
-                <div class="bg-white border border-indigo-100 rounded p-3">
-                    <p class="font-semibold">中毒症状タイムライン</p>
-                    <p class="text-slate-700">時間帯別の想定症状・赤旗所見</p>
-                </div>
-                <div class="bg-white border border-indigo-100 rounded p-3">
-                    <p class="font-semibold">体内動態</p>
-                    <p class="text-slate-700">Tmax / 半減期 / 分布容積 / 蛋白結合 / 代謝排泄</p>
-                </div>
-                <div class="bg-white border border-indigo-100 rounded p-3">
-                    <p class="font-semibold">分析・解釈</p>
-                    <p class="text-slate-700">推奨検査・測定タイミング・判定の考え方</p>
-                </div>
-            </div>
-        </section>
-
         <section>
-            <h2 class="text-lg font-bold mb-3">4) 重症度ランキング（高リスク順）</h2>
+            <h2 class="text-lg font-bold mb-3">3) 重症度ランキング（高リスク順）</h2>
             <div id="priorityList" class="space-y-3">
                 <p class="text-slate-400 text-center py-10 bg-white rounded-xl border border-slate-200">
                     薬剤を追加するとここに解析結果が表示されます
@@ -163,8 +129,25 @@
         </section>
 
         <section id="treatmentSection" class="hidden bg-white border border-slate-200 rounded-xl shadow-sm p-5">
-            <h2 class="text-lg font-bold mb-4 border-b pb-2 text-red-700">5) 治療妥当性の検証</h2>
+            <h2 class="text-lg font-bold mb-4 border-b pb-2 text-red-700">4) 治療妥当性の検証</h2>
             <div id="treatmentMatrix" class="space-y-6"></div>
+        </section>
+
+        <section id="reportSection" class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
+            <h2 class="text-lg font-bold mb-4 border-b pb-2">5) 診療録貼り付け用 出力</h2>
+            <p class="text-xs text-slate-500">
+                仕様: toxnavi-report-v1（構造化テキスト）。背景ロジックは README.md を参照。
+            </p>
+            <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button id="generateReportBtn" class="bg-slate-800 text-white font-bold py-2 px-3 rounded hover:bg-slate-900 transition">
+                    報告書を生成
+                </button>
+                <button id="copyReportBtn" class="bg-emerald-600 text-white font-bold py-2 px-3 rounded hover:bg-emerald-700 transition">
+                    出力をコピー
+                </button>
+            </div>
+            <p id="reportStatus" class="mt-3 text-xs text-slate-500">報告書は未生成です</p>
+            <textarea id="reportOutput" rows="16" class="mt-2 w-full border rounded p-2 font-mono text-xs"></textarea>
         </section>
     </main>
 
@@ -175,6 +158,7 @@
                 this.detectedIngestionItems = [];
                 this.capturedPhotos = [];
                 this.photoCounter = 1;
+                this.reportSpecVersion = "toxnavi-report-v1";
                 this.ocrBusy = false;
                 this.ocrLastText = "";
                 this.searchEntries = [];
@@ -374,6 +358,7 @@
                 this.renderSymptomChips();
                 this.renderCapturedPhotoList();
                 this.renderDetectedDrugTable();
+                this.renderReportOutput();
                 this.loadExternalDatasets();
             }
 
@@ -402,6 +387,8 @@
                 document.getElementById("parseOcrTextBtn").addEventListener("click", () => this.parseAndMatchOcrText());
                 document.getElementById("importDetectedBtn").addEventListener("click", () => this.importDetectedItemsToAssessment());
                 document.getElementById("clearDetectedBtn").addEventListener("click", () => this.clearDetectedItems());
+                document.getElementById("generateReportBtn").addEventListener("click", () => this.renderReportOutput("手動更新しました"));
+                document.getElementById("copyReportBtn").addEventListener("click", () => this.copyReportOutput());
             }
 
             bootstrapJpicSchema() {
@@ -830,6 +817,170 @@
                 else if (tone === "warn") statusEl.classList.add("text-amber-700");
                 else if (tone === "error") statusEl.classList.add("text-rose-700");
                 else statusEl.classList.add("text-slate-500");
+            }
+
+            setReportStatus(message, tone = "info") {
+                const statusEl = document.getElementById("reportStatus");
+                if (!statusEl) return;
+                statusEl.textContent = message;
+                statusEl.classList.remove("text-slate-500", "text-green-700", "text-amber-700", "text-rose-700");
+                if (tone === "success") statusEl.classList.add("text-green-700");
+                else if (tone === "warn") statusEl.classList.add("text-amber-700");
+                else if (tone === "error") statusEl.classList.add("text-rose-700");
+                else statusEl.classList.add("text-slate-500");
+            }
+
+            groupEntriesByInputDrug() {
+                const grouped = new Map();
+                this.entries.forEach((entry) => {
+                    const key = `${entry.inputDrug}__${entry.sourceMode || "manual"}`;
+                    if (!grouped.has(key)) {
+                        grouped.set(key, {
+                            inputDrug: entry.inputDrug,
+                            sourceMode: entry.sourceMode || "manual",
+                            sourceDrug: entry.sourceDrug,
+                            totalAmountMg: 0,
+                            ingredientSet: new Set()
+                        });
+                    }
+                    const target = grouped.get(key);
+                    target.totalAmountMg += Number(entry.ingredientAmountMg) || 0;
+                    target.ingredientSet.add(entry.ingredient);
+                });
+                return [...grouped.values()].sort((a, b) => b.totalAmountMg - a.totalAmountMg);
+            }
+
+            collectRecommendedTests() {
+                const tests = new Set();
+                this.entries.forEach((entry) => {
+                    const recommended = entry.jpicProfile?.analysis?.recommendedTests || [];
+                    recommended.forEach((testName) => {
+                        const clean = String(testName || "").trim();
+                        if (clean) tests.add(clean);
+                    });
+                });
+                return [...tests];
+            }
+
+            formatTreatmentForReport(label, payload) {
+                const status = payload?.status || "情報不足";
+                const action = payload?.action || "情報不足";
+                const reason = payload?.reason || "情報不足";
+                return `- ${label}: [${status}] ${action}\n  根拠: ${reason}`;
+            }
+
+            generateReportText() {
+                const now = new Date();
+                const generatedAt = now.toLocaleString("ja-JP", { hour12: false });
+                const weight = Number(document.getElementById("patientWeight").value);
+                const elapsedMin = Number(document.getElementById("elapsedMinutes").value);
+                const airwaySecured = document.getElementById("airwaySecured").checked;
+                const observedSymptoms = this.parseSymptoms(document.getElementById("observedSymptoms").value);
+
+                const symptomsText = observedSymptoms.length > 0 ? observedSymptoms.join(", ") : "記載なし";
+                const groupedInputs = this.groupEntriesByInputDrug();
+                const recommendedTests = this.collectRecommendedTests();
+
+                const inputDrugBlock = groupedInputs.length > 0
+                    ? groupedInputs.map((item, index) => {
+                        const sourceLabel = item.sourceMode === "photo_ocr" ? "写真OCR" : "手入力";
+                        const ingredientList = [...item.ingredientSet].join(", ");
+                        return `${index + 1}. ${item.inputDrug}\n   - 推定総量: ${this.formatNumber(item.totalAmountMg, 1)} mg\n   - 入力経路: ${sourceLabel}\n   - 展開成分: ${ingredientList}`;
+                    }).join("\n")
+                    : "記載なし";
+
+                const severityBlock = this.entries.length > 0
+                    ? this.entries.map((entry, index) => {
+                        const thresholdText = this.formatThresholdSummary(entry.jpicProfile?.toxicThresholdMgKg || {});
+                        const matched = entry.matchedSymptoms.length > 0 ? entry.matchedSymptoms.join(", ") : "一致なし";
+                        const redFlags = (entry.timelineAssessment?.matchedRedFlags || []).join(", ") || "一致なし";
+                        return `${index + 1}. ${entry.ingredient} (${entry.component})\n   - 判定: ${entry.severity.label}（${entry.severity.detail}）\n   - 推定成分量: ${this.formatNumber(entry.ingredientAmountMg, 1)} mg\n   - 推定摂取量: ${this.formatNumber(entry.doseMgKg, 2)} mg/kg\n   - 毒性比: ${entry.unknown ? "不明" : `${entry.toxicRatio ? this.formatNumber(entry.toxicRatio, 2) : "0.00"} x 中毒量`}\n   - 閾値: ${thresholdText}\n   - 症状一致: ${matched}\n   - 赤旗一致: ${redFlags}`;
+                    }).join("\n")
+                    : "記載なし";
+
+                const treatmentBlock = this.entries.length > 0
+                    ? this.entries.map((entry, index) => {
+                        const otherLines = (entry.treatment?.others || []).map((item) => `- その他: [${item.status}] ${item.name}\n  根拠: ${item.reason}`).join("\n");
+                        return [
+                            `${index + 1}. ${entry.ingredient}`,
+                            this.formatTreatmentForReport("拮抗薬", entry.treatment?.antidote),
+                            this.formatTreatmentForReport("胃洗浄", entry.treatment?.lavage),
+                            this.formatTreatmentForReport("活性炭", entry.treatment?.charcoal),
+                            this.formatTreatmentForReport("血液浄化", entry.treatment?.dialysis),
+                            otherLines || "- その他: 記載なし"
+                        ].join("\n");
+                    }).join("\n")
+                    : "記載なし";
+
+                const testsBlock = recommendedTests.length > 0 ? recommendedTests.map((item) => `- ${item}`).join("\n") : "- 推奨検査データなし";
+
+                return [
+                    `[ToxicNavi Report | ${this.reportSpecVersion}]`,
+                    `作成日時: ${generatedAt}`,
+                    "",
+                    "■患者情報",
+                    `- 体重: ${Number.isFinite(weight) ? `${weight} kg` : "未入力"}`,
+                    `- 摂取からの時間: ${Number.isFinite(elapsedMin) ? `${elapsedMin} 分` : "未入力"}`,
+                    `- 気道確保: ${airwaySecured ? "済み" : "未"}`,
+                    `- 観察症状: ${symptomsText}`,
+                    "",
+                    "■入力薬剤（製剤ベース）",
+                    inputDrugBlock,
+                    "",
+                    "■成分別重症度ランキング",
+                    severityBlock,
+                    "",
+                    "■治療介入妥当性",
+                    treatmentBlock,
+                    "",
+                    "■推奨検査（重複除外）",
+                    testsBlock,
+                    "",
+                    "■注記",
+                    "- 本出力はルールベース計算による支援情報です。",
+                    "- 最終判断は一次情報（添付文書/中毒情報センター）と臨床所見で確認してください。"
+                ].join("\n");
+            }
+
+            renderReportOutput(statusMessage = "") {
+                const outputEl = document.getElementById("reportOutput");
+                if (!outputEl) return;
+                outputEl.value = this.generateReportText();
+                if (statusMessage) {
+                    this.setReportStatus(statusMessage, "success");
+                } else {
+                    const summary = this.entries.length > 0 ? `${this.entries.length} 成分を反映` : "未入力";
+                    this.setReportStatus(`報告書を更新しました（${summary}）`, "info");
+                }
+            }
+
+            async copyReportOutput() {
+                const outputEl = document.getElementById("reportOutput");
+                if (!outputEl) return;
+                const text = String(outputEl.value || "").trim();
+                if (!text) {
+                    this.setReportStatus("コピーする出力がありません。", "warn");
+                    return;
+                }
+
+                try {
+                    if (typeof navigator !== "undefined" && navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+                        await navigator.clipboard.writeText(text);
+                        this.setReportStatus("報告書をクリップボードへコピーしました。", "success");
+                        return;
+                    }
+                } catch (error) {
+                    // fallback へ移行
+                }
+
+                outputEl.focus();
+                outputEl.select();
+                const success = typeof document.execCommand === "function" && document.execCommand("copy");
+                if (success) {
+                    this.setReportStatus("報告書をクリップボードへコピーしました。", "success");
+                } else {
+                    this.setReportStatus("コピーに失敗しました。手動でコピーしてください。", "error");
+                }
             }
 
             buildSearchEntries() {
@@ -1718,6 +1869,7 @@
             render() {
                 this.renderPriorityList();
                 this.renderTreatmentMatrix();
+                this.renderReportOutput();
             }
 
             renderPriorityList() {
