@@ -3,148 +3,1856 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ToxicNavi - 中毒診療支援ツール ver.1.0.0 (2026/02/13 18:30)</title>
+    <title>ToxicNavi - 中毒診療支援ツール ver.2.0.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 50:'#f0f9ff', 100:'#e0f2fe', 200:'#bae6fd', 500:'#0ea5e9', 600:'#0284c7', 700:'#0369a1', 800:'#075985', 900:'#0c4a6e' }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        .severity-high { background-color: #fee2e2; border-left: 4px solid #ef4444; }
-        .severity-mid { background-color: #fef3c7; border-left: 4px solid #f59e0b; }
-        .status-badge { @apply px-2 py-1 rounded text-xs font-bold; }
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap');
+        body { font-family: 'Noto Sans JP', sans-serif; }
+
+        /* Severity cards */
+        .sev-critical { border-left: 5px solid #dc2626; background: linear-gradient(135deg, #fef2f2 0%, #fff 100%); }
+        .sev-high     { border-left: 5px solid #f97316; background: linear-gradient(135deg, #fff7ed 0%, #fff 100%); }
+        .sev-moderate { border-left: 5px solid #eab308; background: linear-gradient(135deg, #fefce8 0%, #fff 100%); }
+        .sev-low      { border-left: 5px solid #22c55e; background: linear-gradient(135deg, #f0fdf4 0%, #fff 100%); }
+        .sev-unknown  { border-left: 5px solid #94a3b8; background: linear-gradient(135deg, #f8fafc 0%, #fff 100%); }
+
+        /* Autocomplete */
+        .ac-dropdown { max-height: 300px; overflow-y: auto; }
+        .ac-item:hover, .ac-item.active { background-color: #e0f2fe; }
+
+        /* Treatment verdict badges */
+        .verdict-recommended { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+        .verdict-consider    { background: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
+        .verdict-not-recommended { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+        .verdict-contraindicated { background: #1e1b4b; color: #e0e7ff; border: 1px solid #6366f1; }
+
+        /* Symptom match highlight */
+        .symptom-match { background: #fef3c7; border: 1px solid #f59e0b; }
+
+        /* Print styles */
+        @media print {
+            header, .no-print { display: none !important; }
+            body { font-size: 10pt; }
+            .container { max-width: 100% !important; }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 3px; }
+
+        /* Step indicator */
+        .step-badge {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 28px; height: 28px; border-radius: 50%;
+            background: #0c4a6e; color: white; font-weight: 700; font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        /* Animation */
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Tooltip */
+        .tooltip-trigger { position: relative; cursor: help; border-bottom: 1px dotted #94a3b8; }
+        .tooltip-trigger:hover::after {
+            content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+            background: #1e293b; color: #fff; padding: 4px 10px; border-radius: 6px;
+            font-size: 12px; white-space: nowrap; z-index: 50;
+        }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900 min-h-screen pb-20">
+<body class="bg-gray-50 text-slate-800 min-h-screen">
 
-    <header class="bg-slate-800 text-white p-4 shadow-lg">
-        <div class="container mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-bold flex items-center gap-2">
-                🧪 ToxicNavi <span class="text-sm font-normal opacity-75">中毒診療支援</span>
-            </h1>
-            <div class="text-xs text-right">
-                患者体重: <input type="number" id="patientWeight" value="60" class="bg-slate-700 border-none rounded px-2 w-16"> kg
+    <!-- ===== HEADER ===== -->
+    <header class="bg-gradient-to-r from-slate-900 via-slate-800 to-brand-900 text-white shadow-xl sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center max-w-5xl">
+            <div class="flex items-center gap-3">
+                <div class="text-3xl">🧪</div>
+                <div>
+                    <h1 class="text-xl font-black tracking-tight">ToxicNavi</h1>
+                    <p class="text-xs text-brand-200 font-light">中毒診療支援ツール v2.0</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4 text-sm">
+                <button onclick="app.resetAll()" class="no-print bg-red-500/20 hover:bg-red-500/40 text-red-200 px-3 py-1.5 rounded-lg text-xs font-bold transition">
+                    全リセット
+                </button>
+                <button onclick="window.print()" class="no-print bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg text-xs font-bold transition">
+                    🖨 印刷
+                </button>
             </div>
         </div>
     </header>
 
-    <main class="container mx-auto p-4 max-w-4xl">
-        <section class="mb-6 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-            <h2 class="text-lg font-bold mb-4 border-b pb-2">1. 摂取薬剤・量の入力</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <input type="text" id="drugInput" placeholder="薬剤名 (例: アセトアミノフェン)" class="border p-2 rounded">
-                <input type="number" id="amountInput" placeholder="摂取量 (mg)" class="border p-2 rounded">
-                <button onclick="app.addDrug()" class="bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition">
-                    リストに追加
-                </button>
-            </div>
-        </section>
+    <!-- ===== DISCLAIMER ===== -->
+    <div class="bg-amber-50 border-b border-amber-200 py-2 text-center text-xs text-amber-800 no-print">
+        ⚠ 本ツールは診療支援用であり、最終判断は必ず臨床医が行ってください。中毒情報センター（つくば: 029-852-9999 / 大阪: 072-727-2499）への相談を推奨します。
+    </div>
 
-        <section class="mb-6">
-            <h2 class="text-lg font-bold mb-4">2. 優先順位・重症度推察 (自動ソート)</h2>
-            <div id="drugList" class="space-y-3">
-                <p class="text-slate-400 text-center py-10">薬剤を入力してください</p>
-            </div>
-        </section>
+    <!-- ===== MAIN CONTENT ===== -->
+    <main class="container mx-auto px-4 py-6 max-w-5xl space-y-6">
 
-        <section id="treatmentSection" class="hidden bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-            <h2 class="text-lg font-bold mb-4 border-b pb-2 text-red-600">3. 治療妥当性の検証マトリクス</h2>
-            <div id="treatmentDetails" class="space-y-6">
+        <!-- STEP 0: Patient Info -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 fade-in">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="step-badge">0</span>
+                <h2 class="text-lg font-bold">患者情報</h2>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">体重 (kg)</label>
+                    <input type="number" id="patientWeight" value="60" min="1" max="300"
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-lg font-bold focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none"
+                        onchange="app.updatePatientInfo()">
                 </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">年齢</label>
+                    <input type="number" id="patientAge" value="40" min="0" max="120"
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-lg font-bold focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none"
+                        onchange="app.updatePatientInfo()">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">摂取からの経過時間</label>
+                    <div class="flex gap-1">
+                        <input type="number" id="hoursElapsed" value="1" min="0" max="999"
+                            class="w-full border border-slate-300 rounded-lg px-3 py-2 text-lg font-bold focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none"
+                            onchange="app.updatePatientInfo()">
+                        <span class="self-center text-sm font-bold text-slate-500">時間</span>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">摂取状況</label>
+                    <select id="ingestionType"
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none"
+                        onchange="app.updatePatientInfo()">
+                        <option value="acute">急性（一度に大量）</option>
+                        <option value="staggered">段階的（複数回）</option>
+                        <option value="chronic">慢性的過量</option>
+                    </select>
+                </div>
+            </div>
         </section>
+
+        <!-- STEP 1: Drug Input -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 fade-in">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="step-badge">1</span>
+                <h2 class="text-lg font-bold">薬剤名の入力・検索</h2>
+                <span class="text-xs text-slate-400">商品名 or 成分名で検索</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                <!-- Drug Search -->
+                <div class="md:col-span-5 relative">
+                    <label class="block text-xs font-bold text-slate-500 mb-1">薬剤名</label>
+                    <input type="text" id="drugSearch" placeholder="例: カロナール, アセトアミノフェン..."
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none"
+                        oninput="app.onSearchInput(this.value)"
+                        onkeydown="app.onSearchKeydown(event)"
+                        onfocus="app.onSearchInput(this.value)"
+                        autocomplete="off">
+                    <div id="acDropdown" class="hidden absolute z-40 w-full bg-white border border-slate-200 rounded-lg shadow-xl mt-1 ac-dropdown"></div>
+                </div>
+                <!-- Amount -->
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-bold text-slate-500 mb-1">数量</label>
+                    <input type="number" id="amountInput" placeholder="数量" min="0" step="any"
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none">
+                </div>
+                <!-- Unit -->
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-bold text-slate-500 mb-1">単位</label>
+                    <select id="unitSelect"
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none">
+                        <option value="tablets">錠/包/本</option>
+                        <option value="mg">mg</option>
+                        <option value="ml">mL</option>
+                    </select>
+                </div>
+                <!-- Add Button -->
+                <div class="md:col-span-3">
+                    <button onclick="app.addDrug()"
+                        class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-2 px-4 rounded-lg transition shadow-sm flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        リストに追加
+                    </button>
+                </div>
+            </div>
+            <div id="selectedDrugInfo" class="mt-3 text-sm text-slate-500 hidden"></div>
+        </section>
+
+        <!-- STEP 2: Drug List (auto-sorted by severity) -->
+        <section class="fade-in">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="step-badge">2</span>
+                <h2 class="text-lg font-bold">摂取薬剤リスト</h2>
+                <span class="text-xs text-slate-400">重症度順に自動ソート</span>
+            </div>
+            <div id="drugListContainer">
+                <div class="bg-white rounded-2xl border border-dashed border-slate-300 p-10 text-center text-slate-400">
+                    <p class="text-4xl mb-2">💊</p>
+                    <p>薬剤を入力して「リストに追加」してください</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 3: Symptom Check -->
+        <section id="symptomSection" class="hidden fade-in">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="step-badge">3</span>
+                <h2 class="text-lg font-bold">患者症状の照合</h2>
+                <span class="text-xs text-slate-400">現在の症状にチェック → 薬剤との関連を表示</span>
+            </div>
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                <div id="symptomChecklist" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2"></div>
+                <div id="symptomMatchResult" class="mt-4 hidden"></div>
+            </div>
+        </section>
+
+        <!-- STEP 4: Treatment Evaluation Matrix -->
+        <section id="treatmentSection" class="hidden fade-in">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="step-badge">4</span>
+                <h2 class="text-lg font-bold text-red-700">治療妥当性の検証</h2>
+                <span class="text-xs text-slate-400">各成分に対する治療戦略</span>
+            </div>
+            <div id="treatmentContainer" class="space-y-6"></div>
+        </section>
+
+        <!-- STEP 5: Summary -->
+        <section id="summarySection" class="hidden fade-in">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="step-badge">5</span>
+                <h2 class="text-lg font-bold">総合アセスメント</h2>
+            </div>
+            <div id="summaryContainer" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6"></div>
+        </section>
+
     </main>
 
+    <!-- ===== FOOTER ===== -->
+    <footer class="bg-slate-100 border-t border-slate-200 py-6 mt-12 text-center text-xs text-slate-400 no-print">
+        <p>ToxicNavi v2.0 - 中毒診療支援ツール | 医療従事者専用 | 免責: 本ツールの情報による損害について一切責任を負いません</p>
+        <p class="mt-1">参考文献: 日本中毒情報センター, UpToDate, Goldfrank's Toxicologic Emergencies</p>
+    </footer>
+
+    <!-- ===== APPLICATION LOGIC ===== -->
     <script>
-        // [設計理由]: 複雑な医療ロジックとUIの状態を同期させるため、OOP(Class)による状態管理を採用。
-        
-        class ToxicNavi {
-            constructor() {
-                this.drugs = [];
-                this.patientWeight = 60;
-                // マスターデータ（本来は外部APIや膨大なJSONにする）
-                this.masterData = {
-                    "アセトアミノフェン": { comp: "Acetaminophen", toxicDose: 150, unit: "mg/kg", symptoms: "嘔気, 肝不全", antidote: "N-アセチルシステイン", charcoal: true, lavage: true, dialysis: false },
-                    "カフェイン": { comp: "Caffeine", toxicDose: 15, unit: "mg/kg", symptoms: "頻脈, 興奮, 不整脈", antidote: "なし(対症療法)", charcoal: true, lavage: true, dialysis: true },
-                    "ジアゼパム": { comp: "Diazepam", toxicDose: 0.5, unit: "mg/kg", symptoms: "意識障害, 呼吸抑制", antidote: "フルマゼニル", charcoal: true, lavage: false, dialysis: false }
-                };
+    // ===========================================================================
+    //  DATABASE: 商品名 → 成分 → 毒性情報
+    // ===========================================================================
+
+    const DB = {
+        // -----------------------------------------------------------------------
+        //  商品名 → 成分マッピング
+        //  perUnit: 1錠(包/本)あたりのmg, mgPerMl: 液剤のmg/mL
+        // -----------------------------------------------------------------------
+        products: {
+            // --- 解熱鎮痛薬 ---
+            "カロナール200": { category: "解熱鎮痛薬", ingredients: [{ name: "アセトアミノフェン", perUnit: 200 }] },
+            "カロナール300": { category: "解熱鎮痛薬", ingredients: [{ name: "アセトアミノフェン", perUnit: 300 }] },
+            "カロナール500": { category: "解熱鎮痛薬", ingredients: [{ name: "アセトアミノフェン", perUnit: 500 }] },
+            "タイレノールA": { category: "解熱鎮痛薬(OTC)", ingredients: [{ name: "アセトアミノフェン", perUnit: 300 }] },
+            "ロキソニン": { category: "解熱鎮痛薬", ingredients: [{ name: "ロキソプロフェン", perUnit: 60 }] },
+            "ブルフェン200": { category: "解熱鎮痛薬", ingredients: [{ name: "イブプロフェン", perUnit: 200 }] },
+            "バファリンA": { category: "解熱鎮痛薬(OTC)", ingredients: [{ name: "アスピリン", perUnit: 330 }] },
+            "ボルタレン25": { category: "解熱鎮痛薬", ingredients: [{ name: "ジクロフェナク", perUnit: 25 }] },
+            "ボルタレン50": { category: "解熱鎮痛薬", ingredients: [{ name: "ジクロフェナク", perUnit: 50 }] },
+
+            // --- OTC配合薬 ---
+            "EVEクイック": { category: "解熱鎮痛薬(OTC)", ingredients: [
+                { name: "イブプロフェン", perUnit: 150 },
+                { name: "アリルイソプロピルアセチル尿素", perUnit: 60 }
+            ]},
+            "バファリンプレミアム": { category: "解熱鎮痛薬(OTC)", note: "2錠あたり", ingredients: [
+                { name: "イブプロフェン", perUnit: 130 },
+                { name: "アセトアミノフェン", perUnit: 130 }
+            ]},
+            "パブロンゴールドA": { category: "総合感冒薬(OTC)", note: "1錠あたり", ingredients: [
+                { name: "アセトアミノフェン", perUnit: 100 },
+                { name: "ジヒドロコデイン", perUnit: 2.67 },
+                { name: "dl-メチルエフェドリン", perUnit: 6.67 },
+                { name: "クロルフェニラミン", perUnit: 0.83 }
+            ]},
+            "ブロン錠": { category: "鎮咳薬(OTC)", note: "1錠あたり", ingredients: [
+                { name: "ジヒドロコデイン", perUnit: 2.5 },
+                { name: "dl-メチルエフェドリン", perUnit: 6.25 },
+                { name: "クロルフェニラミン", perUnit: 0.5 }
+            ]},
+            "ウット": { category: "鎮静薬(OTC)", note: "3錠あたり", ingredients: [
+                { name: "ブロモバレリル尿素", perUnit: 83.3 },
+                { name: "アリルイソプロピルアセチル尿素", perUnit: 50 }
+            ]},
+
+            // --- ベンゾジアゼピン系 ---
+            "デパス0.5mg": { category: "抗不安薬", ingredients: [{ name: "エチゾラム", perUnit: 0.5 }] },
+            "デパス1mg": { category: "抗不安薬", ingredients: [{ name: "エチゾラム", perUnit: 1 }] },
+            "セルシン2mg": { category: "抗不安薬", ingredients: [{ name: "ジアゼパム", perUnit: 2 }] },
+            "セルシン5mg": { category: "抗不安薬", ingredients: [{ name: "ジアゼパム", perUnit: 5 }] },
+            "セルシン10mg": { category: "抗不安薬", ingredients: [{ name: "ジアゼパム", perUnit: 10 }] },
+            "ホリゾン": { category: "抗不安薬", ingredients: [{ name: "ジアゼパム", perUnit: 2 }] },
+            "ハルシオン0.25mg": { category: "睡眠薬", ingredients: [{ name: "トリアゾラム", perUnit: 0.25 }] },
+            "マイスリー5mg": { category: "睡眠薬", ingredients: [{ name: "ゾルピデム", perUnit: 5 }] },
+            "マイスリー10mg": { category: "睡眠薬", ingredients: [{ name: "ゾルピデム", perUnit: 10 }] },
+            "サイレース1mg": { category: "睡眠薬", ingredients: [{ name: "フルニトラゼパム", perUnit: 1 }] },
+            "サイレース2mg": { category: "睡眠薬", ingredients: [{ name: "フルニトラゼパム", perUnit: 2 }] },
+            "ロヒプノール": { category: "睡眠薬", ingredients: [{ name: "フルニトラゼパム", perUnit: 1 }] },
+            "レンドルミン0.25mg": { category: "睡眠薬", ingredients: [{ name: "ブロチゾラム", perUnit: 0.25 }] },
+            "ベンザリン5mg": { category: "睡眠薬", ingredients: [{ name: "ニトラゼパム", perUnit: 5 }] },
+            "ベンザリン10mg": { category: "睡眠薬", ingredients: [{ name: "ニトラゼパム", perUnit: 10 }] },
+            "ネルボン": { category: "睡眠薬", ingredients: [{ name: "ニトラゼパム", perUnit: 5 }] },
+            "リボトリール0.5mg": { category: "抗てんかん薬", ingredients: [{ name: "クロナゼパム", perUnit: 0.5 }] },
+            "リボトリール1mg": { category: "抗てんかん薬", ingredients: [{ name: "クロナゼパム", perUnit: 1 }] },
+            "ワイパックス0.5mg": { category: "抗不安薬", ingredients: [{ name: "ロラゼパム", perUnit: 0.5 }] },
+            "ワイパックス1mg": { category: "抗不安薬", ingredients: [{ name: "ロラゼパム", perUnit: 1 }] },
+            "ソラナックス0.4mg": { category: "抗不安薬", ingredients: [{ name: "アルプラゾラム", perUnit: 0.4 }] },
+            "ソラナックス0.8mg": { category: "抗不安薬", ingredients: [{ name: "アルプラゾラム", perUnit: 0.8 }] },
+            "メイラックス1mg": { category: "抗不安薬", ingredients: [{ name: "ロフラゼプ酸エチル", perUnit: 1 }] },
+
+            // --- 非ベンゾジアゼピン系睡眠薬 ---
+            "ルネスタ1mg": { category: "睡眠薬", ingredients: [{ name: "エスゾピクロン", perUnit: 1 }] },
+            "ルネスタ2mg": { category: "睡眠薬", ingredients: [{ name: "エスゾピクロン", perUnit: 2 }] },
+
+            // --- 抗精神病薬 ---
+            "セロクエル25mg": { category: "抗精神病薬", ingredients: [{ name: "クエチアピン", perUnit: 25 }] },
+            "セロクエル100mg": { category: "抗精神病薬", ingredients: [{ name: "クエチアピン", perUnit: 100 }] },
+            "セロクエル200mg": { category: "抗精神病薬", ingredients: [{ name: "クエチアピン", perUnit: 200 }] },
+            "ジプレキサ2.5mg": { category: "抗精神病薬", ingredients: [{ name: "オランザピン", perUnit: 2.5 }] },
+            "ジプレキサ5mg": { category: "抗精神病薬", ingredients: [{ name: "オランザピン", perUnit: 5 }] },
+            "ジプレキサ10mg": { category: "抗精神病薬", ingredients: [{ name: "オランザピン", perUnit: 10 }] },
+            "リスパダール1mg": { category: "抗精神病薬", ingredients: [{ name: "リスペリドン", perUnit: 1 }] },
+            "リスパダール2mg": { category: "抗精神病薬", ingredients: [{ name: "リスペリドン", perUnit: 2 }] },
+            "エビリファイ3mg": { category: "抗精神病薬", ingredients: [{ name: "アリピプラゾール", perUnit: 3 }] },
+            "エビリファイ6mg": { category: "抗精神病薬", ingredients: [{ name: "アリピプラゾール", perUnit: 6 }] },
+
+            // --- 抗てんかん薬 ---
+            "テグレトール200mg": { category: "抗てんかん薬", ingredients: [{ name: "カルバマゼピン", perUnit: 200 }] },
+            "デパケン200mg": { category: "抗てんかん薬", ingredients: [{ name: "バルプロ酸", perUnit: 200 }] },
+            "デパケンR200mg": { category: "抗てんかん薬", ingredients: [{ name: "バルプロ酸", perUnit: 200 }] },
+            "アレビアチン100mg": { category: "抗てんかん薬", ingredients: [{ name: "フェニトイン", perUnit: 100 }] },
+            "ラミクタール25mg": { category: "抗てんかん薬", ingredients: [{ name: "ラモトリギン", perUnit: 25 }] },
+
+            // --- 抗うつ薬 ---
+            "トリプタノール10mg": { category: "三環系抗うつ薬", ingredients: [{ name: "アミトリプチリン", perUnit: 10 }] },
+            "トリプタノール25mg": { category: "三環系抗うつ薬", ingredients: [{ name: "アミトリプチリン", perUnit: 25 }] },
+            "トフラニール10mg": { category: "三環系抗うつ薬", ingredients: [{ name: "イミプラミン", perUnit: 10 }] },
+            "トフラニール25mg": { category: "三環系抗うつ薬", ingredients: [{ name: "イミプラミン", perUnit: 25 }] },
+            "パキシル10mg": { category: "SSRI", ingredients: [{ name: "パロキセチン", perUnit: 10 }] },
+            "パキシル20mg": { category: "SSRI", ingredients: [{ name: "パロキセチン", perUnit: 20 }] },
+            "ジェイゾロフト25mg": { category: "SSRI", ingredients: [{ name: "セルトラリン", perUnit: 25 }] },
+            "ジェイゾロフト50mg": { category: "SSRI", ingredients: [{ name: "セルトラリン", perUnit: 50 }] },
+            "レクサプロ10mg": { category: "SSRI", ingredients: [{ name: "エスシタロプラム", perUnit: 10 }] },
+            "サインバルタ20mg": { category: "SNRI", ingredients: [{ name: "デュロキセチン", perUnit: 20 }] },
+            "サインバルタ30mg": { category: "SNRI", ingredients: [{ name: "デュロキセチン", perUnit: 30 }] },
+
+            // --- 気分安定薬 ---
+            "リーマス200mg": { category: "気分安定薬", ingredients: [{ name: "炭酸リチウム", perUnit: 200 }] },
+
+            // --- 循環器薬 ---
+            "ジゴシン0.25mg": { category: "強心薬", ingredients: [{ name: "ジゴキシン", perUnit: 0.25 }] },
+            "インデラル10mg": { category: "β遮断薬", ingredients: [{ name: "プロプラノロール", perUnit: 10 }] },
+            "テノーミン25mg": { category: "β遮断薬", ingredients: [{ name: "アテノロール", perUnit: 25 }] },
+            "テノーミン50mg": { category: "β遮断薬", ingredients: [{ name: "アテノロール", perUnit: 50 }] },
+            "ノルバスク5mg": { category: "Ca拮抗薬", ingredients: [{ name: "アムロジピン", perUnit: 5 }] },
+            "ノルバスク10mg": { category: "Ca拮抗薬", ingredients: [{ name: "アムロジピン", perUnit: 10 }] },
+            "アダラートCR20mg": { category: "Ca拮抗薬", ingredients: [{ name: "ニフェジピン", perUnit: 20 }] },
+
+            // --- 糖尿病薬 ---
+            "アマリール1mg": { category: "SU薬", ingredients: [{ name: "グリメピリド", perUnit: 1 }] },
+            "アマリール3mg": { category: "SU薬", ingredients: [{ name: "グリメピリド", perUnit: 3 }] },
+            "メトグルコ250mg": { category: "ビグアナイド", ingredients: [{ name: "メトホルミン", perUnit: 250 }] },
+            "メトグルコ500mg": { category: "ビグアナイド", ingredients: [{ name: "メトホルミン", perUnit: 500 }] },
+
+            // --- その他 ---
+            "テオドール200mg": { category: "気管支拡張薬", ingredients: [{ name: "テオフィリン", perUnit: 200 }] },
+            "カフェイン錠200mg": { category: "その他", ingredients: [{ name: "カフェイン", perUnit: 200 }] },
+            "エナジードリンク(1本)": { category: "その他", ingredients: [{ name: "カフェイン", perUnit: 150 }] },
+        },
+
+        // -----------------------------------------------------------------------
+        //  成分 → 毒性情報
+        //  toxicDose: mg/kg (中毒量), lethalDose: mg/kg (致死量概算)
+        //  severityThresholds: [軽症, 中等症, 重症] の mg/kg
+        // -----------------------------------------------------------------------
+        ingredients: {
+            "アセトアミノフェン": {
+                en: "Acetaminophen", class: "解熱鎮痛薬",
+                toxicDose: 150, lethalDose: 300, unit: "mg/kg",
+                severityThresholds: [75, 150, 300],
+                symptoms: {
+                    early: ["嘔気", "嘔吐", "腹痛", "倦怠感"],
+                    delayed: ["右季肋部痛", "肝不全", "黄疸", "凝固異常", "腎不全"],
+                    severe: ["肝性脳症", "多臓器不全", "代謝性アシドーシス"]
+                },
+                allSymptoms: ["嘔気", "嘔吐", "腹痛", "倦怠感", "肝障害", "黄疸", "凝固異常"],
+                treatment: {
+                    antidote: { name: "N-アセチルシステイン (NAC)", indication: "150mg/kg以上の摂取、または4時間後の血中濃度がRumack-Matthewノモグラム治療ライン以上", dosing: "初回140mg/kg経口→4時間毎70mg/kg×17回、または静注プロトコル(150mg/kg/15min→50mg/kg/4h→100mg/kg/16h)" },
+                    lavage: { verdict: "consider", note: "摂取1時間以内かつ大量摂取時に考慮。気道確保必須。" },
+                    charcoal: { verdict: "recommended", note: "摂取1-2時間以内なら推奨（50g単回投与）。NACとの併用OK。", multiDose: false },
+                    dialysis: { verdict: "not_recommended", note: "蛋白結合率高く通常不要。ただし重症肝不全で代謝物除去目的に血液浄化を検討することあり。" },
+                    other: ["肝機能（AST/ALT/PT-INR）を6時間毎モニタリング", "4時間後の血中濃度測定→ノモグラム確認", "腎機能モニタリング", "凝固系チェック"]
+                }
+            },
+            "イブプロフェン": {
+                en: "Ibuprofen", class: "NSAIDs",
+                toxicDose: 100, lethalDose: 400, unit: "mg/kg",
+                severityThresholds: [50, 100, 400],
+                symptoms: {
+                    early: ["嘔気", "嘔吐", "腹痛", "下痢"],
+                    delayed: ["消化管出血", "腎不全"],
+                    severe: ["代謝性アシドーシス", "痙攣", "昏睡"]
+                },
+                allSymptoms: ["嘔気", "嘔吐", "腹痛", "下痢", "消化管出血", "腎障害"],
+                treatment: {
+                    antidote: { name: "なし", indication: "特異的拮抗薬なし。対症療法。" },
+                    lavage: { verdict: "consider", note: "摂取1時間以内かつ大量摂取(>400mg/kg)時に考慮。" },
+                    charcoal: { verdict: "recommended", note: "摂取1-2時間以内なら推奨。", multiDose: false },
+                    dialysis: { verdict: "not_recommended", note: "蛋白結合率99%であり血液浄化は無効。" },
+                    other: ["消化管保護（PPI投与）", "腎機能モニタリング", "電解質モニタリング"]
+                }
+            },
+            "ロキソプロフェン": {
+                en: "Loxoprofen", class: "NSAIDs",
+                toxicDose: 100, lethalDose: 500, unit: "mg/kg",
+                severityThresholds: [50, 100, 300],
+                symptoms: {
+                    early: ["嘔気", "嘔吐", "腹痛"],
+                    delayed: ["消化管出血", "腎不全"],
+                    severe: ["代謝性アシドーシス", "痙攣"]
+                },
+                allSymptoms: ["嘔気", "嘔吐", "腹痛", "消化管出血", "腎障害"],
+                treatment: {
+                    antidote: { name: "なし", indication: "対症療法。" },
+                    lavage: { verdict: "consider", note: "摂取1時間以内かつ大量摂取時に考慮。" },
+                    charcoal: { verdict: "recommended", note: "摂取1-2時間以内なら推奨。", multiDose: false },
+                    dialysis: { verdict: "not_recommended", note: "蛋白結合率高く無効。" },
+                    other: ["消化管保護", "腎機能モニタリング"]
+                }
+            },
+            "アスピリン": {
+                en: "Aspirin (Acetylsalicylic acid)", class: "NSAIDs/抗血小板薬",
+                toxicDose: 150, lethalDose: 500, unit: "mg/kg",
+                severityThresholds: [150, 300, 500],
+                symptoms: {
+                    early: ["耳鳴", "嘔気", "嘔吐", "過換気"],
+                    delayed: ["代謝性アシドーシス", "呼吸性アルカローシス", "脱水"],
+                    severe: ["肺水腫", "痙攣", "昏睡", "高体温", "凝固異常"]
+                },
+                allSymptoms: ["耳鳴", "嘔気", "嘔吐", "過換気", "代謝性アシドーシス", "痙攣", "高体温"],
+                treatment: {
+                    antidote: { name: "炭酸水素ナトリウム（重曹）", indication: "尿アルカリ化（尿pH 7.5-8.0を目標）で排泄促進。血中濃度>40mg/dL。" },
+                    lavage: { verdict: "consider", note: "摂取1時間以内かつ大量摂取時。腸溶錠は胃内残留しやすく時間経過後も考慮。" },
+                    charcoal: { verdict: "recommended", note: "推奨。反復投与(MDAC)も検討。", multiDose: true },
+                    dialysis: { verdict: "recommended", note: "重症例（血中濃度>100mg/dL、腎不全、肺水腫、CNS症状）で血液透析が非常に有効。" },
+                    other: ["血中サリチル酸濃度を2時間毎測定", "血液ガス・電解質頻回チェック", "輸液（脱水補正）", "低カリウムに注意（アルカリ化の前に補正）"]
+                }
+            },
+            "ジクロフェナク": {
+                en: "Diclofenac", class: "NSAIDs",
+                toxicDose: 10, lethalDose: 50, unit: "mg/kg",
+                severityThresholds: [5, 10, 30],
+                symptoms: {
+                    early: ["嘔気", "嘔吐", "腹痛"],
+                    delayed: ["消化管出血", "腎不全", "肝障害"],
+                    severe: ["痙攣", "代謝性アシドーシス"]
+                },
+                allSymptoms: ["嘔気", "嘔吐", "腹痛", "消化管出血", "腎障害"],
+                treatment: {
+                    antidote: { name: "なし", indication: "対症療法。" },
+                    lavage: { verdict: "consider", note: "摂取1時間以内に考慮。" },
+                    charcoal: { verdict: "recommended", note: "摂取1-2時間以内なら推奨。", multiDose: false },
+                    dialysis: { verdict: "not_recommended", note: "蛋白結合率極めて高く無効。" },
+                    other: ["消化管保護", "腎機能モニタリング"]
+                }
+            },
+            "エチゾラム": {
+                en: "Etizolam", class: "チエノジアゼピン系",
+                toxicDose: 0.5, lethalDose: 10, unit: "mg/kg",
+                severityThresholds: [0.2, 0.5, 2],
+                symptoms: {
+                    early: ["傾眠", "ふらつき", "構音障害"],
+                    delayed: ["意識障害", "呼吸抑制"],
+                    severe: ["昏睡", "呼吸停止"]
+                },
+                allSymptoms: ["傾眠", "意識障害", "構音障害", "ふらつき", "呼吸抑制"],
+                treatment: {
+                    antidote: { name: "フルマゼニル", indication: "純粋なBZD中毒の意識障害に。ただし痙攣歴・三環系併用時は禁忌。0.2mg静注→0.1mgずつ追加（最大1mg）。", dosing: "0.2mg IV → 0.1-0.2mg/min 追加, 最大1mg" },
+                    lavage: { verdict: "not_recommended", note: "通常不要（BZD単独は致死性低い）。" },
+                    charcoal: { verdict: "consider", note: "摂取1時間以内かつ大量なら考慮。", multiDose: false },
+                    dialysis: { verdict: "not_recommended", note: "Vd大きく蛋白結合率高く無効。" },
+                    other: ["気道確保・呼吸管理が最重要", "経過観察（呼吸・意識レベル）", "混合中毒の可能性を常に考慮"]
+                }
+            },
+            "ジアゼパム": {
+                en: "Diazepam", class: "ベンゾジアゼピン系",
+                toxicDose: 1, lethalDose: 15, unit: "mg/kg",
+                severityThresholds: [0.3, 1, 5],
+                symptoms: {
+                    early: ["傾眠", "ふらつき", "構音障害"],
+                    delayed: ["意識障害", "呼吸抑制"],
+                    severe: ["昏睡", "呼吸停止"]
+                },
+                allSymptoms: ["傾眠", "意識障害", "構音障害", "ふらつき", "呼吸抑制"],
+                treatment: {
+                    antidote: { name: "フルマゼニル", indication: "純粋なBZD中毒に。痙攣歴・TCA併用時は禁忌。", dosing: "0.2mg IV → 追加0.1mg/min, 最大1mg" },
+                    lavage: { verdict: "not_recommended", note: "通常不要。" },
+                    charcoal: { verdict: "consider", note: "摂取1時間以内なら考慮。", multiDose: false },
+                    dialysis: { verdict: "not_recommended", note: "Vd大きく無効。" },
+                    other: ["気道確保・呼吸管理", "長時間作用性のため長期観察必要"]
+                }
+            },
+            "トリアゾラム": {
+                en: "Triazolam", class: "ベンゾジアゼピン系",
+                toxicDose: 0.02, lethalDose: 0.5, unit: "mg/kg",
+                severityThresholds: [0.01, 0.02, 0.1],
+                symptoms: {
+                    early: ["傾眠", "ふらつき", "健忘"],
+                    delayed: ["深い鎮静", "呼吸抑制"],
+                    severe: ["昏睡", "呼吸停止"]
+                },
+                allSymptoms: ["傾眠", "意識障害", "健忘", "ふらつき", "呼吸抑制"],
+                treatment: {
+                    antidote: { name: "フルマゼニル", indication: "純粋なBZD中毒に。", dosing: "0.2mg IV → 追加" },
+                    lavage: { verdict: "not_recommended", note: "通常不要。" },
+                    charcoal: { verdict: "consider", note: "大量摂取時のみ考慮。", multiDose: false },
+                    dialysis: { verdict: "not_recommended", note: "無効。" },
+                    other: ["気道管理", "短時間作用性だが健忘に注意"]
+                }
+            },
+            "ゾルピデム": {
+                en: "Zolpidem", class: "非ベンゾジアゼピン系睡眠薬",
+                toxicDose: 2, lethalDose: 40, unit: "mg/kg",
+                severityThresholds: [1, 2, 10],
+                symptoms: {
+                    early: ["傾眠", "ふらつき"],
+                    delayed: ["意識障害", "呼吸抑制"],
+                    severe: ["昏睡"]
+                },
+                allSymptoms: ["傾眠", "意識障害", "ふらつき", "呼吸抑制"],
+                treatment: {
+                    antidote: { name: "フルマゼニル", indication: "部分的に有効。純粋なゾルピデム中毒に考慮。", dosing: "0.2mg IV" },
+                    lavage: { verdict: "not_recommended", note: "通常不要。" },
+                    charcoal: { verdict: "consider", note: "摂取1時間以内なら考慮。", multiDose: false },
+                    dialysis: { verdict: "not_recommended", note: "無効。" },
+                    other: ["気道管理", "混合中毒の評価"]
+                }
+            },
+            "フルニトラゼパム": {
+                en: "Flunitrazepam", class: "ベンゾジアゼピン系",
+                toxicDose: 0.1, lethalDose: 2, unit: "mg/kg",
+                severityThresholds: [0.05, 0.1, 0.5],
+                symptoms: {
+                    early: ["傾眠", "ふらつき"],
+                    delayed: ["深い鎮静", "呼吸抑制"],
+                    severe: ["昏睡", "呼吸停止"]
+                },
+                allSymptoms: ["傾眠", "意識障害", "ふらつき", "呼吸抑制"],
+                treatment: {
+                    antidote: { name: "フルマゼニル", indication: "有効。", dosing: "0.2mg IV → 追加" },
+                    lavage: { verdict: "not_recommended", note: "通常不要。" },
+                    charcoal: { verdict: "consider", note: "摂取1時間以内なら考慮。", multiDose: false },
+                    dialysis: { verdict: "not_recommended", note: "無効。" },
+                    other: ["気道管理が最優先", "長時間作用性のため長期観察"]
+                }
+            },
+            "ブロチゾラム": {
+                en: "Brotizolam", class: "チエノジアゼピン系",
+                toxicDose: 0.02, lethalDose: 0.5, unit: "mg/kg",
+                severityThresholds: [0.01, 0.02, 0.1],
+                symptoms: {
+                    early: ["傾眠", "ふらつき"],
+                    delayed: ["意識障害", "呼吸抑制"],
+                    severe: ["昏睡"]
+                },
+                allSymptoms: ["傾眠", "意識障害", "ふらつき", "呼吸抑制"],
+                treatment: {
+                    antidote: { name: "フルマゼニル", indication: "有効。", dosing: "0.2mg IV → 追加" },
+                    lavage: { verdict: "not_recommended", note: "通常不要。" },
+                    charcoal: { verdict: "consider", note: "大量時のみ考慮。", multiDose: false },
+                    dialysis: { verdict: "not_recommended", note: "無効。" },
+                    other: ["気道管理", "経過観察"]
+                }
+            },
+            "ニトラゼパム": {
+                en: "Nitrazepam", class: "ベンゾジアゼピン系",
+                toxicDose: 0.5, lethalDose: 10, unit: "mg/kg",
+                severityThresholds: [0.2, 0.5, 3],
+                symptoms: {
+                    early: ["傾眠", "ふらつき"],
+                    delayed: ["意識障害", "呼吸抑制"],
+                    severe: ["昏睡"]
+                },
+                allSymptoms: ["傾眠", "意識障害", "ふらつき", "呼吸抑制"],
+                treatment: {
+                    antidote: { name: "フルマゼニル", indication: "有効。" },
+                    lavage: { verdict: "not_recommended", note: "通常不要。" },
+                    charcoal: { verdict: "consider", note: "大量時考慮。", multiDose: false },
+                    dialysis: { verdict: "not_recommended", note: "無効。" },
+                    other: ["気道管理", "長時間作用性のため24時間以上の観察"]
+                }
+            },
+            "クロナゼパム": {
+                en: "Clonazepam", class: "ベンゾジアゼピン系",
+                toxicDose: 0.1, lethalDose: 2, unit: "mg/kg",
+                severityThresholds: [0.05, 0.1, 0.5],
+                symptoms: {
+                    early: ["傾眠", "ふらつき"],
+                    delayed: ["意識障害", "呼吸抑制"],
+                    severe: ["昏睡"]
+                },
+                allSymptoms: ["傾眠", "意識障害", "ふらつき", "呼吸抑制"],
+                treatment: {
+                    antidote: { name: "フルマゼニル", indication: "有効だが慎重に（てんかん患者では痙攣誘発リスク）。" },
+                    lavage: { verdict: "not_recommended", note: "通常不要。" },
+                    charcoal: { verdict: "consider", note: "大量時考慮。", multiDose: false },
+                    dialysis: { verdict: "not_recommended", note: "無効。" },
+                    other: ["気道管理", "てんかん患者では離脱痙攣にも注意"]
+                }
+            },
+            "ロラゼパム": {
+                en: "Lorazepam", class: "ベンゾジアゼピン系",
+                toxicDose: 0.5, lethalDose: 10, unit: "mg/kg",
+                severityThresholds: [0.2, 0.5, 2],
+                symptoms: {
+                    early: ["傾眠", "ふらつき"],
+                    delayed: ["意識障害", "呼吸抑制"],
+                    severe: ["昏睡"]
+                },
+                allSymptoms: ["傾眠", "意識障害", "ふらつき", "呼吸抑制"],
+                treatment: {
+                    antidote: { name: "フルマゼニル", indication: "有効。" },
+                    lavage: { verdict: "not_recommended", note: "通常不要。" },
+                    charcoal: { verdict: "consider", note: "大量時考慮。", multiDose: false },
+                    dialysis: { verdict: "not_recommended", note: "無効。" },
+                    other: ["気道管理"]
+                }
+            },
+            "アルプラゾラム": {
+                en: "Alprazolam", class: "ベンゾジアゼピン系",
+                toxicDose: 0.1, lethalDose: 2, unit: "mg/kg",
+                severityThresholds: [0.05, 0.1, 0.5],
+                symptoms: {
+                    early: ["傾眠", "ふらつき"],
+                    delayed: ["意識障害", "呼吸抑制"],
+                    severe: ["昏睡"]
+                },
+                allSymptoms: ["傾眠", "意識障害", "ふらつき", "呼吸抑制"],
+                treatment: {
+                    antidote: { name: "フルマゼニル", indication: "有効。" },
+                    lavage: { verdict: "not_recommended", note: "通常不要。" },
+                    charcoal: { verdict: "consider", note: "大量時考慮。", multiDose: false },
+                    dialysis: { verdict: "not_recommended", note: "無効。" },
+                    other: ["気道管理"]
+                }
+            },
+            "ロフラゼプ酸エチル": {
+                en: "Ethyl Loflazepate", class: "ベンゾジアゼピン系",
+                toxicDose: 0.1, lethalDose: 2, unit: "mg/kg",
+                severityThresholds: [0.05, 0.1, 0.5],
+                symptoms: {
+                    early: ["傾眠", "ふらつき"],
+                    delayed: ["意識障害", "呼吸抑制"],
+                    severe: ["昏睡"]
+                },
+                allSymptoms: ["傾眠", "意識障害", "ふらつき", "呼吸抑制"],
+                treatment: {
+                    antidote: { name: "フルマゼニル", indication: "有効。" },
+                    lavage: { verdict: "not_recommended", note: "通常不要。" },
+                    charcoal: { verdict: "consider", note: "大量時考慮。", multiDose: false },
+                    dialysis: { verdict: "not_recommended", note: "無効。" },
+                    other: ["気道管理", "超長時間作用性→長期観察"]
+                }
+            },
+            "エスゾピクロン": {
+                en: "Eszopiclone", class: "非ベンゾジアゼピン系",
+                toxicDose: 1, lethalDose: 30, unit: "mg/kg",
+                severityThresholds: [0.5, 1, 5],
+                symptoms: {
+                    early: ["傾眠"],
+                    delayed: ["意識障害", "呼吸抑制"],
+                    severe: ["昏睡"]
+                },
+                allSymptoms: ["傾眠", "意識障害", "呼吸抑制"],
+                treatment: {
+                    antidote: { name: "フルマゼニル", indication: "部分的に有効。" },
+                    lavage: { verdict: "not_recommended", note: "通常不要。" },
+                    charcoal: { verdict: "consider", note: "摂取1時間以内なら考慮。", multiDose: false },
+                    dialysis: { verdict: "not_recommended", note: "無効。" },
+                    other: ["気道管理"]
+                }
+            },
+            "クエチアピン": {
+                en: "Quetiapine", class: "非定型抗精神病薬",
+                toxicDose: 15, lethalDose: 100, unit: "mg/kg",
+                severityThresholds: [8, 15, 50],
+                symptoms: {
+                    early: ["傾眠", "頻脈", "低血圧"],
+                    delayed: ["意識障害", "QT延長", "痙攣"],
+                    severe: ["昏睡", "致死的不整脈", "横紋筋融解"]
+                },
+                allSymptoms: ["傾眠", "頻脈", "低血圧", "意識障害", "QT延長", "痙攣"],
+                treatment: {
+                    antidote: { name: "なし", indication: "特異的拮抗薬なし。" },
+                    lavage: { verdict: "consider", note: "摂取1時間以内かつ大量なら考慮。" },
+                    charcoal: { verdict: "recommended", note: "推奨（摂取2時間以内）。", multiDose: false },
+                    dialysis: { verdict: "not_recommended", note: "Vd大きく無効。" },
+                    other: ["心電図モニタリング（QT延長に注意）", "輸液・昇圧薬（低血圧時）", "痙攣にはベンゾジアゼピン", "高血糖に注意"]
+                }
+            },
+            "オランザピン": {
+                en: "Olanzapine", class: "非定型抗精神病薬",
+                toxicDose: 1, lethalDose: 30, unit: "mg/kg",
+                severityThresholds: [0.5, 1, 5],
+                symptoms: {
+                    early: ["傾眠", "頻脈"],
+                    delayed: ["意識障害", "抗コリン症状", "低血圧"],
+                    severe: ["昏睡", "痙攣"]
+                },
+                allSymptoms: ["傾眠", "頻脈", "意識障害", "低血圧", "抗コリン症状"],
+                treatment: {
+                    antidote: { name: "なし", indication: "対症療法。" },
+                    lavage: { verdict: "consider", note: "大量摂取時に考慮。" },
+                    charcoal: { verdict: "recommended", note: "摂取1-2時間以内なら推奨。", multiDose: false },
+                    dialysis: { verdict: "not_recommended", note: "Vd大きく無効。" },
+                    other: ["心電図モニタリング", "血圧管理", "血糖モニタリング"]
+                }
+            },
+            "リスペリドン": {
+                en: "Risperidone", class: "非定型抗精神病薬",
+                toxicDose: 1, lethalDose: 20, unit: "mg/kg",
+                severityThresholds: [0.5, 1, 5],
+                symptoms: {
+                    early: ["傾眠", "頻脈", "低血圧"],
+                    delayed: ["錐体外路症状", "QT延長"],
+                    severe: ["痙攣", "悪性症候群"]
+                },
+                allSymptoms: ["傾眠", "頻脈", "低血圧", "錐体外路症状", "QT延長"],
+                treatment: {
+                    antidote: { name: "なし", indication: "対症療法。錐体外路症状にはビペリデン。" },
+                    lavage: { verdict: "consider", note: "大量摂取時考慮。" },
+                    charcoal: { verdict: "recommended", note: "摂取1-2時間以内なら推奨。", multiDose: false },
+                    dialysis: { verdict: "not_recommended", note: "蛋白結合率高く無効。" },
+                    other: ["心電図モニタリング（QT延長）", "体温モニタリング（NMS）"]
+                }
+            },
+            "アリピプラゾール": {
+                en: "Aripiprazole", class: "非定型抗精神病薬",
+                toxicDose: 5, lethalDose: 50, unit: "mg/kg",
+                severityThresholds: [2, 5, 15],
+                symptoms: {
+                    early: ["傾眠", "嘔気"],
+                    delayed: ["意識障害", "頻脈"],
+                    severe: ["痙攣", "昏睡"]
+                },
+                allSymptoms: ["傾眠", "嘔気", "意識障害", "頻脈"],
+                treatment: {
+                    antidote: { name: "なし", indication: "対症療法。" },
+                    lavage: { verdict: "consider", note: "大量摂取時考慮。" },
+                    charcoal: { verdict: "recommended", note: "推奨。", multiDose: false },
+                    dialysis: { verdict: "not_recommended", note: "蛋白結合率>99%で無効。" },
+                    other: ["心電図モニタリング", "経過観察"]
+                }
+            },
+            "カルバマゼピン": {
+                en: "Carbamazepine", class: "抗てんかん薬",
+                toxicDose: 20, lethalDose: 60, unit: "mg/kg",
+                severityThresholds: [10, 20, 40],
+                symptoms: {
+                    early: ["眼振", "ふらつき", "嘔気"],
+                    delayed: ["意識障害", "痙攣", "心伝導障害"],
+                    severe: ["昏睡", "呼吸抑制", "致死的不整脈"]
+                },
+                allSymptoms: ["眼振", "ふらつき", "意識障害", "痙攣", "不整脈"],
+                treatment: {
+                    antidote: { name: "なし", indication: "特異的拮抗薬なし。" },
+                    lavage: { verdict: "consider", note: "摂取1時間以内に考慮。徐放製剤は胃内残留しやすい。" },
+                    charcoal: { verdict: "recommended", note: "反復投与(MDAC)が有効（腸肝循環あり）。4時間毎25g。", multiDose: true },
+                    dialysis: { verdict: "consider", note: "重症例で血液灌流(hemoperfusion)が有効。" },
+                    other: ["血中濃度モニタリング", "心電図連続モニタリング", "痙攣にはベンゾジアゼピン"]
+                }
+            },
+            "バルプロ酸": {
+                en: "Valproic Acid", class: "抗てんかん薬",
+                toxicDose: 75, lethalDose: 400, unit: "mg/kg",
+                severityThresholds: [40, 75, 200],
+                symptoms: {
+                    early: ["傾眠", "嘔気", "嘔吐"],
+                    delayed: ["意識障害", "代謝性アシドーシス", "高アンモニア血症"],
+                    severe: ["昏睡", "脳浮腫", "肝不全", "汎血球減少"]
+                },
+                allSymptoms: ["傾眠", "嘔気", "意識障害", "代謝性アシドーシス", "高アンモニア血症"],
+                treatment: {
+                    antidote: { name: "L-カルニチン", indication: "高アンモニア血症・肝障害時。100mg/kg IV（最大3g）→50mg/kg 8時間毎。", dosing: "100mg/kg IV (max 3g) → 50mg/kg q8h" },
+                    lavage: { verdict: "consider", note: "摂取1時間以内に考慮。" },
+                    charcoal: { verdict: "recommended", note: "推奨。", multiDose: false },
+                    dialysis: { verdict: "recommended", note: "重症例（血中濃度>850μg/mL、脳浮腫、血行動態不安定）で血液透析が有効。" },
+                    other: ["血中濃度・アンモニアモニタリング", "肝機能チェック", "血液ガス（アシドーシス評価）"]
+                }
+            },
+            "フェニトイン": {
+                en: "Phenytoin", class: "抗てんかん薬",
+                toxicDose: 20, lethalDose: 100, unit: "mg/kg",
+                severityThresholds: [10, 20, 50],
+                symptoms: {
+                    early: ["眼振", "ふらつき", "嘔気"],
+                    delayed: ["意識障害", "小脳失調"],
+                    severe: ["痙攣(逆説的)", "心伝導障害"]
+                },
+                allSymptoms: ["眼振", "ふらつき", "意識障害", "小脳失調"],
+                treatment: {
+                    antidote: { name: "なし", indication: "対症療法。" },
+                    lavage: { verdict: "consider", note: "大量摂取時に考慮。" },
+                    charcoal: { verdict: "recommended", note: "反復投与(MDAC)が有効。", multiDose: true },
+                    dialysis: { verdict: "not_recommended", note: "蛋白結合率90%で通常無効。" },
+                    other: ["血中濃度モニタリング", "心電図（不整脈監視）"]
+                }
+            },
+            "ラモトリギン": {
+                en: "Lamotrigine", class: "抗てんかん薬",
+                toxicDose: 20, lethalDose: 100, unit: "mg/kg",
+                severityThresholds: [10, 20, 50],
+                symptoms: {
+                    early: ["嘔気", "ふらつき", "眼振"],
+                    delayed: ["意識障害", "QRS延長"],
+                    severe: ["痙攣", "心停止"]
+                },
+                allSymptoms: ["嘔気", "ふらつき", "意識障害", "QRS延長", "痙攣"],
+                treatment: {
+                    antidote: { name: "なし", indication: "対症療法。QRS延長には重曹。" },
+                    lavage: { verdict: "consider", note: "大量摂取時に考慮。" },
+                    charcoal: { verdict: "recommended", note: "推奨。", multiDose: false },
+                    dialysis: { verdict: "not_recommended", note: "蛋白結合率高く無効。" },
+                    other: ["心電図モニタリング", "QRS延長に炭酸水素ナトリウム"]
+                }
+            },
+            "アミトリプチリン": {
+                en: "Amitriptyline", class: "三環系抗うつ薬",
+                toxicDose: 10, lethalDose: 30, unit: "mg/kg",
+                severityThresholds: [5, 10, 20],
+                symptoms: {
+                    early: ["口渇", "散瞳", "頻脈", "尿閉"],
+                    delayed: ["意識障害", "QRS延長", "痙攣"],
+                    severe: ["致死的不整脈", "心停止", "昏睡"]
+                },
+                allSymptoms: ["口渇", "散瞳", "頻脈", "尿閉", "意識障害", "QRS延長", "痙攣"],
+                treatment: {
+                    antidote: { name: "炭酸水素ナトリウム（重曹）", indication: "QRS≥100ms で投与。1-2mEq/kg IV bolus→持続。pH 7.45-7.55を目標。", dosing: "1-2mEq/kg IV bolus" },
+                    lavage: { verdict: "consider", note: "摂取1時間以内かつ致死量以上なら考慮。気道確保必須。" },
+                    charcoal: { verdict: "recommended", note: "強く推奨（摂取2時間以内）。抗コリン作用で胃排出遅延があるため多少遅れても有効な場合あり。", multiDose: false },
+                    dialysis: { verdict: "not_recommended", note: "Vd極めて大きく(15-40L/kg)無効。蛋白結合率>90%。" },
+                    other: ["心電図連続モニタリング（QRS, QT）", "痙攣にはベンゾジアゼピン（フェニトイン禁忌）", "低血圧にはNE/輸液", "抗コリン症状の管理", "フルマゼニル禁忌（痙攣誘発）", "最低12時間のICU管理"]
+                }
+            },
+            "イミプラミン": {
+                en: "Imipramine", class: "三環系抗うつ薬",
+                toxicDose: 10, lethalDose: 30, unit: "mg/kg",
+                severityThresholds: [5, 10, 20],
+                symptoms: {
+                    early: ["口渇", "散瞳", "頻脈", "尿閉"],
+                    delayed: ["意識障害", "QRS延長", "痙攣"],
+                    severe: ["致死的不整脈", "心停止"]
+                },
+                allSymptoms: ["口渇", "散瞳", "頻脈", "尿閉", "意識障害", "QRS延長", "痙攣"],
+                treatment: {
+                    antidote: { name: "炭酸水素ナトリウム（重曹）", indication: "QRS延長時。", dosing: "1-2mEq/kg IV" },
+                    lavage: { verdict: "consider", note: "大量摂取1時間以内に考慮。" },
+                    charcoal: { verdict: "recommended", note: "強く推奨。", multiDose: false },
+                    dialysis: { verdict: "not_recommended", note: "Vd大きく無効。" },
+                    other: ["心電図連続モニタリング", "痙攣にベンゾジアゼピン", "フルマゼニル禁忌"]
+                }
+            },
+            "パロキセチン": {
+                en: "Paroxetine", class: "SSRI",
+                toxicDose: 10, lethalDose: 100, unit: "mg/kg",
+                severityThresholds: [5, 10, 30],
+                symptoms: {
+                    early: ["嘔気", "振戦", "発汗"],
+                    delayed: ["セロトニン症候群", "痙攣"],
+                    severe: ["高体温", "横紋筋融解", "DIC"]
+                },
+                allSymptoms: ["嘔気", "振戦", "発汗", "興奮", "痙攣", "高体温", "頻脈"],
+                treatment: {
+                    antidote: { name: "シプロヘプタジン", indication: "セロトニン症候群時。12mg経口初回→2mg 2時間毎。", dosing: "12mg PO initial → 2mg q2h" },
+                    lavage: { verdict: "not_recommended", note: "SSRI単独では通常不要。" },
+                    charcoal: { verdict: "consider", note: "摂取1-2時間以内なら考慮。", multiDose: false },
+                    dialysis: { verdict: "not_recommended", note: "Vd大きく無効。" },
+                    other: ["セロトニン症候群の評価（Hunter criteria）", "ベンゾジアゼピン（興奮・痙攣）", "冷却（高体温時）", "MAO阻害薬との併用確認"]
+                }
+            },
+            "セルトラリン": {
+                en: "Sertraline", class: "SSRI",
+                toxicDose: 10, lethalDose: 100, unit: "mg/kg",
+                severityThresholds: [5, 10, 30],
+                symptoms: {
+                    early: ["嘔気", "振戦"],
+                    delayed: ["セロトニン症候群", "QT延長"],
+                    severe: ["痙攣", "高体温"]
+                },
+                allSymptoms: ["嘔気", "振戦", "興奮", "痙攣", "QT延長", "高体温"],
+                treatment: {
+                    antidote: { name: "シプロヘプタジン", indication: "セロトニン症候群時。" },
+                    lavage: { verdict: "not_recommended", note: "通常不要。" },
+                    charcoal: { verdict: "consider", note: "摂取1-2時間以内なら考慮。", multiDose: false },
+                    dialysis: { verdict: "not_recommended", note: "Vd大きく無効。" },
+                    other: ["セロトニン症候群評価", "心電図（QT延長）"]
+                }
+            },
+            "エスシタロプラム": {
+                en: "Escitalopram", class: "SSRI",
+                toxicDose: 5, lethalDose: 50, unit: "mg/kg",
+                severityThresholds: [3, 5, 15],
+                symptoms: {
+                    early: ["嘔気", "振戦"],
+                    delayed: ["セロトニン症候群", "QT延長"],
+                    severe: ["痙攣", "致死的不整脈"]
+                },
+                allSymptoms: ["嘔気", "振戦", "QT延長", "痙攣", "高体温"],
+                treatment: {
+                    antidote: { name: "シプロヘプタジン", indication: "セロトニン症候群時。" },
+                    lavage: { verdict: "not_recommended", note: "通常不要。" },
+                    charcoal: { verdict: "consider", note: "摂取1-2時間以内なら考慮。", multiDose: false },
+                    dialysis: { verdict: "not_recommended", note: "無効。" },
+                    other: ["心電図モニタリング（QT延長注意）", "セロトニン症候群評価"]
+                }
+            },
+            "デュロキセチン": {
+                en: "Duloxetine", class: "SNRI",
+                toxicDose: 10, lethalDose: 80, unit: "mg/kg",
+                severityThresholds: [5, 10, 30],
+                symptoms: {
+                    early: ["嘔気", "頻脈", "振戦"],
+                    delayed: ["セロトニン症候群", "痙攣"],
+                    severe: ["高体温", "横紋筋融解"]
+                },
+                allSymptoms: ["嘔気", "頻脈", "振戦", "発汗", "痙攣", "高体温"],
+                treatment: {
+                    antidote: { name: "シプロヘプタジン", indication: "セロトニン症候群時。" },
+                    lavage: { verdict: "not_recommended", note: "通常不要。" },
+                    charcoal: { verdict: "consider", note: "摂取1-2時間以内なら考慮。", multiDose: false },
+                    dialysis: { verdict: "not_recommended", note: "蛋白結合率>90%で無効。" },
+                    other: ["セロトニン症候群評価", "心電図モニタリング"]
+                }
+            },
+            "炭酸リチウム": {
+                en: "Lithium Carbonate", class: "気分安定薬",
+                toxicDose: 40, lethalDose: 150, unit: "mg/kg",
+                severityThresholds: [20, 40, 80],
+                symptoms: {
+                    early: ["嘔気", "嘔吐", "下痢", "振戦"],
+                    delayed: ["意識障害", "腎不全", "不整脈"],
+                    severe: ["痙攣", "昏睡", "心停止"]
+                },
+                allSymptoms: ["嘔気", "嘔吐", "下痢", "振戦", "意識障害", "腎障害", "痙攣"],
+                treatment: {
+                    antidote: { name: "なし", indication: "特異的拮抗薬なし。全身管理。" },
+                    lavage: { verdict: "consider", note: "摂取1時間以内に考慮。大量摂取時は全腸管洗浄(WBI)も検討。" },
+                    charcoal: { verdict: "contraindicated", note: "活性炭はリチウムを吸着しない。無効。" },
+                    dialysis: { verdict: "recommended", note: "重症例（血中Li>4mEq/L、CNS症状、腎不全）で血液透析が非常に有効。リバウンドに注意し6時間後に再検。" },
+                    other: ["血中リチウム濃度を2-4時間毎測定", "大量輸液（生理食塩水）で腎排泄促進", "全腸管洗浄(WBI)の検討", "透析後のリバウンドに注意", "腎機能モニタリング"]
+                }
+            },
+            "ジゴキシン": {
+                en: "Digoxin", class: "強心配糖体",
+                toxicDose: 0.05, lethalDose: 0.3, unit: "mg/kg",
+                severityThresholds: [0.02, 0.05, 0.1],
+                symptoms: {
+                    early: ["嘔気", "嘔吐", "食欲不振"],
+                    delayed: ["徐脈", "不整脈", "高カリウム血症", "視覚異常（黄視）"],
+                    severe: ["致死的不整脈", "心停止"]
+                },
+                allSymptoms: ["嘔気", "嘔吐", "徐脈", "不整脈", "高カリウム血症"],
+                treatment: {
+                    antidote: { name: "ジゴキシン特異的抗体（DigiFab）", indication: "致死的不整脈、高カリウム(>5.5)、血行動態不安定時。バイアル数=摂取量(mg)×0.8/0.5 または 血中濃度×体重/100。", dosing: "バイアル数 = 摂取量(mg) × 0.8 ÷ 0.5" },
+                    lavage: { verdict: "consider", note: "摂取1時間以内に考慮。" },
+                    charcoal: { verdict: "recommended", note: "推奨。反復投与も検討（腸肝循環）。", multiDose: true },
+                    dialysis: { verdict: "not_recommended", note: "Vd大きく(5-7L/kg)無効。" },
+                    other: ["心電図連続モニタリング（あらゆる不整脈に注意）", "カリウム頻回チェック", "アトロピン（徐脈時）", "ペーシング準備", "電気的除細動は最終手段（VF誘発リスク）"]
+                }
+            },
+            "プロプラノロール": {
+                en: "Propranolol", class: "β遮断薬",
+                toxicDose: 2, lethalDose: 20, unit: "mg/kg",
+                severityThresholds: [1, 2, 10],
+                symptoms: {
+                    early: ["徐脈", "低血圧"],
+                    delayed: ["意識障害", "低血糖", "気管支痙攣"],
+                    severe: ["心原性ショック", "痙攣", "心停止"]
+                },
+                allSymptoms: ["徐脈", "低血圧", "意識障害", "低血糖", "気管支痙攣"],
+                treatment: {
+                    antidote: { name: "グルカゴン", indication: "徐脈・低血圧時。3-10mg IV bolus → 3-5mg/h持続。", dosing: "3-10mg IV bolus → 3-5mg/h infusion" },
+                    lavage: { verdict: "consider", note: "致死量以上の摂取1時間以内に考慮。" },
+                    charcoal: { verdict: "recommended", note: "推奨。", multiDose: false },
+                    dialysis: { verdict: "not_recommended", note: "Vd大きく蛋白結合率高く無効。" },
+                    other: ["アトロピン（徐脈に）", "高用量インスリン療法(HIE)の検討", "カテコラミン", "脂肪乳剤（IVLE, Intralipid）の検討", "ペーシング準備", "血糖モニタリング"]
+                }
+            },
+            "アテノロール": {
+                en: "Atenolol", class: "β遮断薬",
+                toxicDose: 5, lethalDose: 50, unit: "mg/kg",
+                severityThresholds: [2, 5, 20],
+                symptoms: {
+                    early: ["徐脈", "低血圧"],
+                    delayed: ["意識障害", "低血糖"],
+                    severe: ["心原性ショック"]
+                },
+                allSymptoms: ["徐脈", "低血圧", "意識障害", "低血糖"],
+                treatment: {
+                    antidote: { name: "グルカゴン", indication: "徐脈・低血圧時。", dosing: "3-10mg IV bolus → 持続" },
+                    lavage: { verdict: "consider", note: "大量摂取時考慮。" },
+                    charcoal: { verdict: "recommended", note: "推奨。", multiDose: false },
+                    dialysis: { verdict: "consider", note: "水溶性で蛋白結合率低く、重症例で血液透析が有効な場合あり。" },
+                    other: ["グルカゴン", "HIE", "カテコラミン", "ペーシング"]
+                }
+            },
+            "アムロジピン": {
+                en: "Amlodipine", class: "Ca拮抗薬",
+                toxicDose: 1, lethalDose: 10, unit: "mg/kg",
+                severityThresholds: [0.5, 1, 5],
+                symptoms: {
+                    early: ["低血圧", "頻脈（反射性）"],
+                    delayed: ["徐脈", "心原性ショック", "高血糖", "代謝性アシドーシス"],
+                    severe: ["難治性ショック", "肺水腫", "心停止"]
+                },
+                allSymptoms: ["低血圧", "徐脈", "頻脈", "高血糖", "代謝性アシドーシス"],
+                treatment: {
+                    antidote: { name: "高用量インスリン療法(HIE) + Ca製剤", indication: "低血圧・徐脈時。インスリン1U/kg bolus → 0.5-2U/kg/h + グルコース + 塩化Ca/グルコン酸Ca。", dosing: "Insulin 1U/kg IV → 0.5-2U/kg/h + Ca gluconate 3g IV" },
+                    lavage: { verdict: "consider", note: "摂取1時間以内かつ致死量に考慮。長時間作用型は遅れても胃内残留の可能性。" },
+                    charcoal: { verdict: "recommended", note: "推奨。全腸管洗浄(WBI)も検討。", multiDose: false },
+                    dialysis: { verdict: "not_recommended", note: "Vd極大(21L/kg)、蛋白結合率97%で無効。" },
+                    other: ["高用量インスリン療法(HIE)が第一選択", "Ca製剤投与", "輸液・昇圧薬", "脂肪乳剤(IVLE)の検討", "VA-ECMOの検討（難治性）", "血糖・電解質頻回モニタリング"]
+                }
+            },
+            "ニフェジピン": {
+                en: "Nifedipine", class: "Ca拮抗薬",
+                toxicDose: 5, lethalDose: 30, unit: "mg/kg",
+                severityThresholds: [2, 5, 15],
+                symptoms: {
+                    early: ["低血圧", "頻脈"],
+                    delayed: ["徐脈", "心原性ショック", "高血糖"],
+                    severe: ["難治性ショック", "心停止"]
+                },
+                allSymptoms: ["低血圧", "頻脈", "徐脈", "高血糖"],
+                treatment: {
+                    antidote: { name: "高用量インスリン療法(HIE) + Ca製剤", indication: "低血圧時。" },
+                    lavage: { verdict: "consider", note: "徐放製剤では胃内残留の可能性あり。" },
+                    charcoal: { verdict: "recommended", note: "推奨。WBIも検討（徐放製剤）。", multiDose: false },
+                    dialysis: { verdict: "not_recommended", note: "蛋白結合率高く無効。" },
+                    other: ["HIE", "Ca製剤", "昇圧薬", "脂肪乳剤"]
+                }
+            },
+            "グリメピリド": {
+                en: "Glimepiride", class: "SU薬",
+                toxicDose: 0.1, lethalDose: 1, unit: "mg/kg",
+                severityThresholds: [0.05, 0.1, 0.5],
+                symptoms: {
+                    early: ["低血糖（発汗, 振戦, 頻脈, 空腹感）"],
+                    delayed: ["遷延性低血糖", "意識障害"],
+                    severe: ["痙攣", "昏睡", "脳障害"]
+                },
+                allSymptoms: ["低血糖", "発汗", "振戦", "頻脈", "意識障害", "痙攣"],
+                treatment: {
+                    antidote: { name: "オクトレオチド + ブドウ糖", indication: "低血糖時。オクトレオチド50-100μg SC q6-8h でインスリン分泌抑制。50%ブドウ糖50mL IV。", dosing: "Octreotide 50-100μg SC q6-8h + D50W 50mL IV" },
+                    lavage: { verdict: "consider", note: "大量摂取時に考慮。" },
+                    charcoal: { verdict: "recommended", note: "推奨。", multiDose: false },
+                    dialysis: { verdict: "not_recommended", note: "蛋白結合率>99%で無効。" },
+                    other: ["血糖を1時間毎モニタリング（最低24時間）", "遷延性低血糖に注意（SU薬は長時間作用）", "入院観察必須"]
+                }
+            },
+            "メトホルミン": {
+                en: "Metformin", class: "ビグアナイド",
+                toxicDose: 85, lethalDose: 400, unit: "mg/kg",
+                severityThresholds: [50, 85, 200],
+                symptoms: {
+                    early: ["嘔気", "嘔吐", "下痢", "腹痛"],
+                    delayed: ["乳酸アシドーシス", "低血糖"],
+                    severe: ["重症乳酸アシドーシス", "多臓器不全", "心停止"]
+                },
+                allSymptoms: ["嘔気", "嘔吐", "下痢", "乳酸アシドーシス", "低血糖"],
+                treatment: {
+                    antidote: { name: "なし", indication: "特異的拮抗薬なし。乳酸アシドーシスの管理。" },
+                    lavage: { verdict: "consider", note: "大量摂取1時間以内に考慮。" },
+                    charcoal: { verdict: "consider", note: "摂取1時間以内なら考慮。", multiDose: false },
+                    dialysis: { verdict: "recommended", note: "乳酸アシドーシス時に血液透析が有効（低分子量、蛋白結合なし）。CRRT/CHDFも検討。" },
+                    other: ["乳酸値・血液ガス頻回モニタリング", "血糖モニタリング", "腎機能チェック", "重曹投与は賛否あり（透析優先）"]
+                }
+            },
+            "テオフィリン": {
+                en: "Theophylline", class: "キサンチン誘導体",
+                toxicDose: 10, lethalDose: 50, unit: "mg/kg",
+                severityThresholds: [5, 10, 30],
+                symptoms: {
+                    early: ["嘔気", "嘔吐", "頻脈", "興奮"],
+                    delayed: ["低カリウム血症", "高血糖", "代謝性アシドーシス"],
+                    severe: ["痙攣", "致死的不整脈", "横紋筋融解"]
+                },
+                allSymptoms: ["嘔気", "嘔吐", "頻脈", "興奮", "低カリウム血症", "痙攣", "不整脈"],
+                treatment: {
+                    antidote: { name: "なし", indication: "特異的拮抗薬なし。" },
+                    lavage: { verdict: "consider", note: "摂取1時間以内に考慮。徐放製剤はWBIも。" },
+                    charcoal: { verdict: "recommended", note: "反復投与(MDAC)が非常に有効。4時間毎25g。", multiDose: true },
+                    dialysis: { verdict: "recommended", note: "重症例（血中濃度>100μg/mL急性、痙攣、血行動態不安定）で血液灌流or透析が有効。" },
+                    other: ["血中テオフィリン濃度モニタリング", "電解質（K）頻回チェック", "痙攣にはベンゾジアゼピン（フェニトイン無効）", "制吐剤（オンダンセトロン）"]
+                }
+            },
+            "カフェイン": {
+                en: "Caffeine", class: "キサンチン誘導体",
+                toxicDose: 15, lethalDose: 80, unit: "mg/kg",
+                severityThresholds: [10, 15, 50],
+                symptoms: {
+                    early: ["嘔気", "嘔吐", "頻脈", "興奮", "振戦"],
+                    delayed: ["低カリウム血症", "不整脈", "横紋筋融解"],
+                    severe: ["痙攣", "致死的不整脈", "心停止"]
+                },
+                allSymptoms: ["嘔気", "頻脈", "興奮", "振戦", "不整脈", "痙攣", "低カリウム血症"],
+                treatment: {
+                    antidote: { name: "なし", indication: "対症療法。" },
+                    lavage: { verdict: "consider", note: "大量摂取1時間以内に考慮。" },
+                    charcoal: { verdict: "recommended", note: "MDAC有効。", multiDose: true },
+                    dialysis: { verdict: "consider", note: "重症例で血液透析を検討。" },
+                    other: ["心電図モニタリング", "電解質（K, Mg）補正", "βブロッカー（頻脈・不整脈に短時間作用型エスモロール検討）", "痙攣にベンゾジアゼピン"]
+                }
+            },
+            "アリルイソプロピルアセチル尿素": {
+                en: "Allylisopropylacetylurea", class: "鎮静薬",
+                toxicDose: 15, lethalDose: 50, unit: "mg/kg",
+                severityThresholds: [8, 15, 30],
+                symptoms: {
+                    early: ["傾眠", "ふらつき"],
+                    delayed: ["意識障害", "呼吸抑制"],
+                    severe: ["昏睡", "呼吸停止"]
+                },
+                allSymptoms: ["傾眠", "意識障害", "ふらつき", "呼吸抑制"],
+                treatment: {
+                    antidote: { name: "なし", indication: "対症療法。" },
+                    lavage: { verdict: "consider", note: "大量摂取時に考慮。" },
+                    charcoal: { verdict: "recommended", note: "推奨。", multiDose: false },
+                    dialysis: { verdict: "consider", note: "重症例で検討。" },
+                    other: ["気道管理", "経過観察"]
+                }
+            },
+            "ブロモバレリル尿素": {
+                en: "Bromovalerylurea", class: "鎮静薬",
+                toxicDose: 30, lethalDose: 100, unit: "mg/kg",
+                severityThresholds: [15, 30, 60],
+                symptoms: {
+                    early: ["傾眠", "嘔気"],
+                    delayed: ["意識障害", "呼吸抑制", "臭素中毒"],
+                    severe: ["昏睡", "呼吸停止", "腎不全"]
+                },
+                allSymptoms: ["傾眠", "意識障害", "呼吸抑制"],
+                treatment: {
+                    antidote: { name: "なし", indication: "対症療法。" },
+                    lavage: { verdict: "consider", note: "大量摂取時に考慮。" },
+                    charcoal: { verdict: "recommended", note: "推奨。", multiDose: false },
+                    dialysis: { verdict: "consider", note: "重症例で血液灌流を検討。" },
+                    other: ["気道管理", "臭素濃度チェック", "輸液"]
+                }
+            },
+            "ジヒドロコデイン": {
+                en: "Dihydrocodeine", class: "オピオイド",
+                toxicDose: 3, lethalDose: 15, unit: "mg/kg",
+                severityThresholds: [1.5, 3, 10],
+                symptoms: {
+                    early: ["傾眠", "嘔気", "縮瞳"],
+                    delayed: ["呼吸抑制", "意識障害"],
+                    severe: ["昏睡", "呼吸停止"]
+                },
+                allSymptoms: ["傾眠", "縮瞳", "嘔気", "呼吸抑制", "意識障害"],
+                treatment: {
+                    antidote: { name: "ナロキソン", indication: "呼吸抑制時。0.4-2mg IV → 反応なければ追加（最大10mg）。効果は短いため持続投与考慮。", dosing: "0.4-2mg IV → 追加, 持続0.4-0.8mg/h" },
+                    lavage: { verdict: "consider", note: "大量摂取時に考慮。" },
+                    charcoal: { verdict: "consider", note: "摂取1時間以内なら考慮。", multiDose: false },
+                    dialysis: { verdict: "not_recommended", note: "無効。" },
+                    other: ["気道確保・呼吸管理が最優先", "ナロキソンの半減期(30-90min)はコデインより短いため再投与注意"]
+                }
+            },
+            "dl-メチルエフェドリン": {
+                en: "dl-Methylephedrine", class: "交感神経刺激薬",
+                toxicDose: 5, lethalDose: 30, unit: "mg/kg",
+                severityThresholds: [2, 5, 15],
+                symptoms: {
+                    early: ["頻脈", "高血圧", "興奮", "振戦"],
+                    delayed: ["不整脈", "痙攣"],
+                    severe: ["脳出血", "心停止"]
+                },
+                allSymptoms: ["頻脈", "高血圧", "興奮", "振戦", "不整脈"],
+                treatment: {
+                    antidote: { name: "なし", indication: "対症療法。" },
+                    lavage: { verdict: "consider", note: "大量摂取時に考慮。" },
+                    charcoal: { verdict: "consider", note: "摂取1時間以内なら考慮。", multiDose: false },
+                    dialysis: { verdict: "not_recommended", note: "無効。" },
+                    other: ["ベンゾジアゼピン（興奮・痙攣）", "降圧（高血圧緊急症時）"]
+                }
+            },
+            "クロルフェニラミン": {
+                en: "Chlorpheniramine", class: "抗ヒスタミン薬",
+                toxicDose: 1, lethalDose: 10, unit: "mg/kg",
+                severityThresholds: [0.5, 1, 5],
+                symptoms: {
+                    early: ["傾眠", "口渇", "散瞳"],
+                    delayed: ["興奮（小児）", "痙攣", "頻脈"],
+                    severe: ["意識障害", "不整脈"]
+                },
+                allSymptoms: ["傾眠", "口渇", "散瞳", "頻脈", "痙攣"],
+                treatment: {
+                    antidote: { name: "なし", indication: "対症療法。重症抗コリン症状にフィゾスチグミン検討。" },
+                    lavage: { verdict: "consider", note: "大量摂取時に考慮。" },
+                    charcoal: { verdict: "recommended", note: "推奨。", multiDose: false },
+                    dialysis: { verdict: "not_recommended", note: "無効。" },
+                    other: ["痙攣にベンゾジアゼピン", "心電図モニタリング"]
+                }
+            },
+        },
+
+        // -----------------------------------------------------------------------
+        //  症状マスターリスト（チェックリスト用）
+        // -----------------------------------------------------------------------
+        symptomCategories: {
+            "中枢神経": ["傾眠", "意識障害", "昏睡", "興奮", "痙攣", "構音障害", "ふらつき", "小脳失調", "眼振", "健忘", "頭痛"],
+            "循環器": ["頻脈", "徐脈", "低血圧", "高血圧", "不整脈", "QRS延長", "QT延長", "心原性ショック"],
+            "呼吸器": ["呼吸抑制", "過換気", "気管支痙攣", "肺水腫"],
+            "消化器": ["嘔気", "嘔吐", "腹痛", "下痢", "消化管出血"],
+            "代謝": ["代謝性アシドーシス", "低血糖", "高血糖", "低カリウム血症", "高カリウム血症", "高アンモニア血症", "乳酸アシドーシス"],
+            "自律神経": ["散瞳", "縮瞳", "発汗", "口渇", "尿閉"],
+            "その他": ["振戦", "高体温", "横紋筋融解", "肝障害", "黄疸", "腎障害", "凝固異常", "耳鳴", "錐体外路症状", "抗コリン症状"]
+        }
+    };
+
+    // ===========================================================================
+    //  APPLICATION CLASS
+    // ===========================================================================
+
+    class ToxicNavi {
+        constructor() {
+            this.ingestedDrugs = [];       // { productName, amount, unit, ingredients: [{ name, totalMg, dosePerKg, severityScore, severityLabel, info }] }
+            this.patientWeight = 60;
+            this.patientAge = 40;
+            this.hoursElapsed = 1;
+            this.ingestionType = 'acute';
+            this.selectedProduct = null;
+            this.acActiveIndex = -1;
+            this.checkedSymptoms = new Set();
+        }
+
+        // --- Patient Info ---
+        updatePatientInfo() {
+            this.patientWeight = parseFloat(document.getElementById('patientWeight').value) || 60;
+            this.patientAge = parseFloat(document.getElementById('patientAge').value) || 40;
+            this.hoursElapsed = parseFloat(document.getElementById('hoursElapsed').value) || 0;
+            this.ingestionType = document.getElementById('ingestionType').value;
+            // Recalculate all severities
+            this.recalcAll();
+            this.renderAll();
+        }
+
+        // --- Autocomplete Search ---
+        onSearchInput(query) {
+            this.acActiveIndex = -1;
+            const dropdown = document.getElementById('acDropdown');
+            if (!query || query.length < 1) { dropdown.classList.add('hidden'); return; }
+
+            const q = query.toLowerCase();
+            let results = [];
+
+            // Search products
+            for (const [name, info] of Object.entries(DB.products)) {
+                if (name.toLowerCase().includes(q)) {
+                    results.push({ type: 'product', name, info, matchField: name });
+                }
+            }
+            // Search by ingredient name
+            for (const [name, info] of Object.entries(DB.products)) {
+                for (const ing of info.ingredients) {
+                    if (ing.name.toLowerCase().includes(q)) {
+                        if (!results.find(r => r.name === name)) {
+                            results.push({ type: 'product', name, info, matchField: `成分: ${ing.name}` });
+                        }
+                    }
+                    // Also search english name
+                    const ingInfo = DB.ingredients[ing.name];
+                    if (ingInfo && ingInfo.en.toLowerCase().includes(q)) {
+                        if (!results.find(r => r.name === name)) {
+                            results.push({ type: 'product', name, info, matchField: `${ingInfo.en}` });
+                        }
+                    }
+                }
+            }
+            // Search ingredients directly
+            for (const [name, info] of Object.entries(DB.ingredients)) {
+                if (name.toLowerCase().includes(q) || info.en.toLowerCase().includes(q)) {
+                    if (!results.find(r => r.name === name && r.type === 'ingredient')) {
+                        results.push({ type: 'ingredient', name, info, matchField: `成分: ${name} (${info.en})` });
+                    }
+                }
             }
 
-            addDrug() {
-                const name = document.getElementById('drugInput').value;
-                const amount = parseFloat(document.getElementById('amountInput').value);
-                this.patientWeight = parseFloat(document.getElementById('patientWeight').value);
-
-                if (!name || !amount) return alert("入力が不完全です");
-
-                const info = this.masterData[name] || { comp: "不明", toxicDose: 0, symptoms: "不明", unknown: true };
-                
-                // 重症度計算 (摂取量 / 体重)
-                const dosePerKg = amount / this.patientWeight;
-                const severityScore = info.toxicDose ? (dosePerKg / info.toxicDose) : 0;
-
-                this.drugs.push({
-                    name, amount, dosePerKg, info, severityScore
-                });
-
-                // 重症度順にソート
-                this.drugs.sort((a, b) => b.severityScore - a.severityScore);
-                
-                this.render();
+            if (results.length === 0) {
+                dropdown.innerHTML = `<div class="p-3 text-sm text-slate-400">該当なし — 成分名を直接入力して手動追加できます</div>`;
+                dropdown.classList.remove('hidden');
+                return;
             }
 
-            render() {
-                const listEl = document.getElementById('drugList');
-                const treatEl = document.getElementById('treatmentSection');
-                const treatDetailEl = document.getElementById('treatmentDetails');
-                
-                listEl.innerHTML = "";
-                treatDetailEl.innerHTML = "";
+            dropdown.innerHTML = results.slice(0, 20).map((r, i) => {
+                const typeLabel = r.type === 'product' ? `<span class="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">${r.info.category || '製品'}</span>` : `<span class="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">成分</span>`;
+                const ingList = r.type === 'product' ? `<span class="text-xs text-slate-400 ml-2">${r.info.ingredients.map(ig => ig.name + ' ' + ig.perUnit + 'mg').join(', ')}</span>` : '';
+                return `<div class="ac-item p-2.5 cursor-pointer border-b border-slate-100 flex items-center gap-2 ${i === this.acActiveIndex ? 'active' : ''}"
+                    data-type="${r.type}" data-name="${r.name}"
+                    onclick="app.selectSearchResult('${r.type}', '${r.name.replace(/'/g, "\\'")}')">
+                    ${typeLabel}
+                    <span class="font-bold">${r.name}</span>
+                    ${ingList}
+                </div>`;
+            }).join('');
+            dropdown.classList.remove('hidden');
+        }
 
-                if (this.drugs.length > 0) treatEl.classList.remove('hidden');
+        onSearchKeydown(e) {
+            const dropdown = document.getElementById('acDropdown');
+            const items = dropdown.querySelectorAll('.ac-item');
+            if (e.key === 'ArrowDown') { e.preventDefault(); this.acActiveIndex = Math.min(this.acActiveIndex + 1, items.length - 1); this.updateAcHighlight(items); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); this.acActiveIndex = Math.max(this.acActiveIndex - 1, 0); this.updateAcHighlight(items); }
+            else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (this.acActiveIndex >= 0 && items[this.acActiveIndex]) {
+                    items[this.acActiveIndex].click();
+                } else {
+                    this.addDrug();
+                }
+            }
+            else if (e.key === 'Escape') { dropdown.classList.add('hidden'); }
+        }
 
-                this.drugs.forEach((drug, index) => {
-                    const sevClass = drug.severityScore >= 1 ? 'severity-high' : 'severity-mid';
-                    
-                    // リスト表示
-                    listEl.innerHTML += `
-                        <div class="${sevClass} p-4 rounded shadow-sm flex justify-between items-center bg-white">
-                            <div>
-                                <span class="text-xs font-bold text-slate-500">No.${index + 1} 優先度高</span>
-                                <h3 class="font-bold text-lg">${drug.name} (${drug.info.comp})</h3>
-                                <p class="text-sm">予測症状: <span class="text-red-600">${drug.info.symptoms}</span></p>
-                            </div>
-                            <div class="text-right">
-                                <div class="text-2xl font-black">${drug.dosePerKg.toFixed(1)}</div>
-                                <div class="text-xs">mg/kg 摂取</div>
-                            </div>
-                        </div>
-                    `;
+        updateAcHighlight(items) {
+            items.forEach((it, i) => it.classList.toggle('active', i === this.acActiveIndex));
+            if (items[this.acActiveIndex]) items[this.acActiveIndex].scrollIntoView({ block: 'nearest' });
+        }
 
-                    // 治療妥当性表示
-                    treatDetailEl.innerHTML += `
-                        <div class="border-l-4 border-slate-800 pl-4 mb-8">
-                            <h3 class="font-black text-xl mb-3 underline">${drug.name} の治療戦略</h3>
-                            <table class="w-full text-sm border-collapse">
-                                <tr class="border-b">
-                                    <td class="py-2 font-bold w-32">拮抗薬</td>
-                                    <td class="py-2">${drug.info.antidote || 'なし'}</td>
-                                </tr>
-                                <tr class="border-b">
-                                    <td class="py-2 font-bold text-blue-600">胃洗浄</td>
-                                    <td class="py-2">${drug.info.lavage ? '✅ 考慮（摂取1時間以内）' : '❌ 非推奨'}</td>
-                                </tr>
-                                <tr class="border-b">
-                                    <td class="py-2 font-bold text-green-600">活性炭</td>
-                                    <td class="py-2">${drug.info.charcoal ? '✅ 推奨' : '⚠️ 禁忌または効果薄'}</td>
-                                </tr>
-                                <tr class="border-b">
-                                    <td class="py-2 font-bold text-purple-600">血液浄化</td>
-                                    <td class="py-2">${drug.info.dialysis ? '✅ 適応検討（重症時）' : '❌ 効果なし'}</td>
-                                </tr>
-                            </table>
-                        </div>
-                    `;
+        selectSearchResult(type, name) {
+            document.getElementById('drugSearch').value = name;
+            document.getElementById('acDropdown').classList.add('hidden');
+            this.selectedProduct = { type, name };
+
+            // Show info
+            const infoEl = document.getElementById('selectedDrugInfo');
+            if (type === 'product') {
+                const prod = DB.products[name];
+                infoEl.innerHTML = `<div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <span class="font-bold text-blue-800">${name}</span>
+                    <span class="text-blue-600 text-xs ml-2">${prod.category}</span>
+                    ${prod.note ? `<span class="text-xs text-slate-500 ml-2">(${prod.note})</span>` : ''}
+                    <div class="mt-1 text-xs">
+                        含有成分: ${prod.ingredients.map(ig => `<span class="font-bold">${ig.name}</span> ${ig.perUnit}mg/単位`).join(' + ')}
+                    </div>
+                </div>`;
+            } else {
+                const ing = DB.ingredients[name];
+                infoEl.innerHTML = `<div class="bg-green-50 border border-green-200 rounded-lg p-3">
+                    <span class="font-bold text-green-800">${name}</span>
+                    <span class="text-green-600 text-xs ml-2">(${ing.en})</span>
+                    <div class="mt-1 text-xs">中毒量: ${ing.toxicDose}${ing.unit} | 致死量概算: ${ing.lethalDose}${ing.unit}</div>
+                </div>`;
+            }
+            infoEl.classList.remove('hidden');
+        }
+
+        // --- Add Drug ---
+        addDrug() {
+            const searchVal = document.getElementById('drugSearch').value.trim();
+            const amount = parseFloat(document.getElementById('amountInput').value);
+            const unit = document.getElementById('unitSelect').value;
+
+            if (!searchVal) return this.showAlert('薬剤名を入力してください');
+            if (!amount || amount <= 0) return this.showAlert('数量を入力してください');
+
+            let productName = searchVal;
+            let ingredientList = [];
+
+            // Check if it's a known product
+            const prod = DB.products[searchVal];
+            if (prod) {
+                ingredientList = prod.ingredients.map(ig => {
+                    let totalMg;
+                    if (unit === 'tablets') totalMg = ig.perUnit * amount;
+                    else if (unit === 'mg') totalMg = amount; // assume full amount is this ingredient (simplified)
+                    else totalMg = amount * (ig.perUnit || 1); // mL → approximate
+
+                    return { name: ig.name, totalMg };
                 });
+            } else {
+                // Check if it's a known ingredient
+                const ingInfo = DB.ingredients[searchVal];
+                if (ingInfo) {
+                    const totalMg = (unit === 'mg') ? amount : amount * 100; // rough estimate for tablets
+                    ingredientList = [{ name: searchVal, totalMg }];
+                } else {
+                    // Unknown drug - add as unknown
+                    const totalMg = (unit === 'mg') ? amount : amount * 100;
+                    ingredientList = [{ name: searchVal, totalMg }];
+                }
+            }
+
+            // Calculate severity for each ingredient
+            const ingredients = ingredientList.map(ig => {
+                const info = DB.ingredients[ig.name] || null;
+                const dosePerKg = ig.totalMg / this.patientWeight;
+                let severityScore = 0;
+                let severityLabel = '不明';
+
+                if (info) {
+                    severityScore = info.toxicDose ? (dosePerKg / info.toxicDose) : 0;
+                    severityLabel = this.getSeverityLabel(dosePerKg, info);
+                }
+
+                return { name: ig.name, totalMg: ig.totalMg, dosePerKg, severityScore, severityLabel, info };
+            });
+
+            // Get max severity for sorting
+            const maxSeverity = Math.max(...ingredients.map(ig => ig.severityScore), 0);
+
+            this.ingestedDrugs.push({
+                id: Date.now(),
+                productName,
+                amount,
+                unit,
+                ingredients,
+                maxSeverity
+            });
+
+            // Sort by maxSeverity descending
+            this.ingestedDrugs.sort((a, b) => b.maxSeverity - a.maxSeverity);
+
+            // Clear inputs
+            document.getElementById('drugSearch').value = '';
+            document.getElementById('amountInput').value = '';
+            document.getElementById('selectedDrugInfo').classList.add('hidden');
+            this.selectedProduct = null;
+
+            this.renderAll();
+        }
+
+        removeDrug(id) {
+            this.ingestedDrugs = this.ingestedDrugs.filter(d => d.id !== id);
+            this.renderAll();
+        }
+
+        recalcAll() {
+            for (const drug of this.ingestedDrugs) {
+                for (const ig of drug.ingredients) {
+                    ig.dosePerKg = ig.totalMg / this.patientWeight;
+                    if (ig.info) {
+                        ig.severityScore = ig.info.toxicDose ? (ig.dosePerKg / ig.info.toxicDose) : 0;
+                        ig.severityLabel = this.getSeverityLabel(ig.dosePerKg, ig.info);
+                    }
+                }
+                drug.maxSeverity = Math.max(...drug.ingredients.map(ig => ig.severityScore), 0);
+            }
+            this.ingestedDrugs.sort((a, b) => b.maxSeverity - a.maxSeverity);
+        }
+
+        getSeverityLabel(dosePerKg, info) {
+            if (!info || !info.severityThresholds) return '不明';
+            const [mild, mod, sev] = info.severityThresholds;
+            if (dosePerKg >= sev) return '致死的';
+            if (dosePerKg >= mod) return '重症';
+            if (dosePerKg >= mild) return '中等症';
+            if (dosePerKg > 0) return '軽症';
+            return '微量';
+        }
+
+        getSeverityClass(label) {
+            switch(label) {
+                case '致死的': return 'sev-critical';
+                case '重症': return 'sev-high';
+                case '中等症': return 'sev-moderate';
+                case '軽症': return 'sev-low';
+                default: return 'sev-unknown';
             }
         }
 
-        const app = new ToxicNavi();
+        getSeverityBadge(label) {
+            const colors = { '致死的': 'bg-red-600 text-white', '重症': 'bg-orange-500 text-white', '中等症': 'bg-yellow-400 text-yellow-900', '軽症': 'bg-green-500 text-white', '微量': 'bg-slate-300 text-slate-700', '不明': 'bg-slate-200 text-slate-600' };
+            return `<span class="px-2 py-0.5 rounded-full text-xs font-black ${colors[label] || colors['不明']}">${label}</span>`;
+        }
+
+        getVerdictBadge(verdict) {
+            const map = {
+                'recommended': ['verdict-recommended', '推奨'],
+                'consider': ['verdict-consider', '考慮'],
+                'not_recommended': ['verdict-not-recommended', '非推奨'],
+                'contraindicated': ['verdict-contraindicated', '禁忌']
+            };
+            const [cls, text] = map[verdict] || ['verdict-consider', verdict];
+            return `<span class="px-2.5 py-1 rounded text-xs font-black ${cls}">${text}</span>`;
+        }
+
+        getTimingVerdict(originalVerdict, treatment) {
+            // Adjust verdict based on hours elapsed
+            if (this.hoursElapsed > 2 && originalVerdict === 'recommended' && treatment === 'charcoal') return 'consider';
+            if (this.hoursElapsed > 4 && treatment === 'charcoal') return 'not_recommended';
+            if (this.hoursElapsed > 1 && originalVerdict !== 'not_recommended' && treatment === 'lavage') return 'not_recommended';
+            return originalVerdict;
+        }
+
+        // --- Symptom Check ---
+        toggleSymptom(symptom) {
+            if (this.checkedSymptoms.has(symptom)) this.checkedSymptoms.delete(symptom);
+            else this.checkedSymptoms.add(symptom);
+            this.renderSymptomMatch();
+        }
+
+        renderSymptomMatch() {
+            const resultEl = document.getElementById('symptomMatchResult');
+            if (this.checkedSymptoms.size === 0) { resultEl.classList.add('hidden'); return; }
+
+            let matches = [];
+            // For each ingredient in ingested drugs, check symptom overlap
+            for (const drug of this.ingestedDrugs) {
+                for (const ig of drug.ingredients) {
+                    if (!ig.info) continue;
+                    const drugSymptoms = ig.info.allSymptoms || [];
+                    const matched = drugSymptoms.filter(s => this.checkedSymptoms.has(s));
+                    if (matched.length > 0) {
+                        matches.push({ ingredientName: ig.name, matched, total: drugSymptoms.length, ratio: matched.length / Math.max(this.checkedSymptoms.size, 1) });
+                    }
+                }
+            }
+            matches.sort((a, b) => b.ratio - a.ratio);
+
+            if (matches.length === 0) {
+                resultEl.innerHTML = `<div class="bg-slate-50 rounded-lg p-4 text-sm text-slate-500">チェックされた症状と一致する薬剤はリスト内にありません。</div>`;
+            } else {
+                resultEl.innerHTML = `
+                    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                        <h4 class="font-bold text-amber-800 mb-2">🔍 症状-薬剤マッチング結果</h4>
+                        <div class="space-y-2">
+                            ${matches.map(m => `
+                                <div class="flex items-center gap-3 bg-white rounded p-2 shadow-sm">
+                                    <span class="font-bold text-sm">${m.ingredientName}</span>
+                                    <span class="text-xs text-slate-500">一致: ${m.matched.length}/${this.checkedSymptoms.size}</span>
+                                    <div class="flex-1 flex flex-wrap gap-1">
+                                        ${m.matched.map(s => `<span class="bg-amber-100 text-amber-800 text-xs px-1.5 py-0.5 rounded font-bold">${s}</span>`).join('')}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>`;
+            }
+            resultEl.classList.remove('hidden');
+        }
+
+        // --- Render All ---
+        renderAll() {
+            this.renderDrugList();
+            this.renderSymptomChecklist();
+            this.renderTreatmentMatrix();
+            this.renderSummary();
+        }
+
+        renderDrugList() {
+            const container = document.getElementById('drugListContainer');
+            if (this.ingestedDrugs.length === 0) {
+                container.innerHTML = `<div class="bg-white rounded-2xl border border-dashed border-slate-300 p-10 text-center text-slate-400">
+                    <p class="text-4xl mb-2">💊</p>
+                    <p>薬剤を入力して「リストに追加」してください</p>
+                </div>`;
+                document.getElementById('symptomSection').classList.add('hidden');
+                document.getElementById('treatmentSection').classList.add('hidden');
+                document.getElementById('summarySection').classList.add('hidden');
+                return;
+            }
+
+            document.getElementById('symptomSection').classList.remove('hidden');
+            document.getElementById('treatmentSection').classList.remove('hidden');
+            document.getElementById('summarySection').classList.remove('hidden');
+
+            container.innerHTML = `<div class="space-y-3">${this.ingestedDrugs.map((drug, idx) => {
+                const worstIg = drug.ingredients.reduce((a, b) => a.severityScore >= b.severityScore ? a : b, drug.ingredients[0]);
+                const sevClass = this.getSeverityClass(worstIg.severityLabel);
+
+                return `<div class="${sevClass} rounded-xl p-4 shadow-sm fade-in">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-xs font-black text-slate-500 bg-white/70 px-2 py-0.5 rounded">#${idx + 1}</span>
+                                ${this.getSeverityBadge(worstIg.severityLabel)}
+                                <span class="text-xs text-slate-500">${drug.amount}${drug.unit === 'tablets' ? '錠' : drug.unit} 摂取</span>
+                            </div>
+                            <h3 class="font-black text-lg">${drug.productName}</h3>
+                            <div class="mt-2 space-y-1.5">
+                                ${drug.ingredients.map(ig => `
+                                    <div class="text-sm flex items-center gap-2 flex-wrap">
+                                        <span class="font-bold">${ig.name}</span>
+                                        ${ig.info ? `<span class="text-xs text-slate-500">(${ig.info.en})</span>` : ''}
+                                        <span class="text-xs bg-white/80 px-1.5 py-0.5 rounded">
+                                            ${ig.totalMg.toFixed(1)}mg = <span class="font-black">${ig.dosePerKg.toFixed(2)} mg/kg</span>
+                                        </span>
+                                        ${ig.info ? `<span class="text-xs text-slate-500">中毒量: ${ig.info.toxicDose}${ig.info.unit}</span>` : ''}
+                                        ${this.getSeverityBadge(ig.severityLabel)}
+                                    </div>
+                                    ${ig.info ? `<div class="text-xs text-slate-600 ml-4">
+                                        予測症状:
+                                        ${ig.info.symptoms.early.map(s => `<span class="inline-block ${this.checkedSymptoms.has(s) ? 'bg-amber-200 font-bold' : 'bg-slate-100'} rounded px-1 mr-0.5">${s}</span>`).join('')}
+                                        ${ig.severityScore >= 0.5 ? ig.info.symptoms.delayed.map(s => `<span class="inline-block ${this.checkedSymptoms.has(s) ? 'bg-amber-200 font-bold' : 'bg-red-50'} text-red-700 rounded px-1 mr-0.5">${s}</span>`).join('') : ''}
+                                        ${ig.severityScore >= 1.0 ? ig.info.symptoms.severe.map(s => `<span class="inline-block ${this.checkedSymptoms.has(s) ? 'bg-amber-200 font-bold' : 'bg-red-100'} text-red-800 font-bold rounded px-1 mr-0.5">${s}</span>`).join('') : ''}
+                                    </div>` : '<div class="text-xs text-red-500 ml-4">⚠ データベースに登録されていない成分です</div>'}
+                                `).join('')}
+                            </div>
+                        </div>
+                        <div class="text-right ml-4 flex flex-col items-end gap-2">
+                            <div>
+                                <div class="text-3xl font-black">${worstIg.dosePerKg.toFixed(1)}</div>
+                                <div class="text-xs text-slate-500">mg/kg</div>
+                                ${worstIg.info && worstIg.info.toxicDose ? `<div class="text-xs mt-1"><span class="font-bold">${(worstIg.severityScore * 100).toFixed(0)}%</span> of 中毒量</div>` : ''}
+                            </div>
+                            <button onclick="app.removeDrug(${drug.id})" class="no-print text-xs text-red-400 hover:text-red-600 transition">✕ 削除</button>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('')}</div>`;
+        }
+
+        renderSymptomChecklist() {
+            const el = document.getElementById('symptomChecklist');
+            let html = '';
+            for (const [category, symptoms] of Object.entries(DB.symptomCategories)) {
+                html += `<div class="col-span-full mt-2 mb-1"><span class="text-xs font-black text-slate-500 uppercase tracking-wider">${category}</span></div>`;
+                for (const symptom of symptoms) {
+                    // Check if this symptom is expected from any ingested drug
+                    let isExpected = false;
+                    for (const drug of this.ingestedDrugs) {
+                        for (const ig of drug.ingredients) {
+                            if (ig.info && ig.info.allSymptoms && ig.info.allSymptoms.includes(symptom)) {
+                                isExpected = true; break;
+                            }
+                        }
+                        if (isExpected) break;
+                    }
+                    const checked = this.checkedSymptoms.has(symptom);
+                    const expectedClass = isExpected ? 'border-amber-300 bg-amber-50' : 'border-slate-200';
+                    const checkedClass = checked ? 'bg-blue-100 border-blue-400 ring-2 ring-blue-300' : '';
+
+                    html += `<label class="flex items-center gap-1.5 p-1.5 rounded-lg border cursor-pointer transition hover:bg-slate-50 text-sm ${expectedClass} ${checkedClass}"
+                        onclick="app.toggleSymptom('${symptom}')">
+                        <input type="checkbox" ${checked ? 'checked' : ''} class="pointer-events-none rounded" onchange="event.stopPropagation()">
+                        <span>${symptom}</span>
+                        ${isExpected ? '<span class="text-amber-500 text-xs">★</span>' : ''}
+                    </label>`;
+                }
+            }
+            el.innerHTML = html;
+            this.renderSymptomMatch();
+        }
+
+        renderTreatmentMatrix() {
+            const container = document.getElementById('treatmentContainer');
+            if (this.ingestedDrugs.length === 0) { container.innerHTML = ''; return; }
+
+            // Collect all unique ingredients
+            const seen = new Set();
+            const allIngredients = [];
+            for (const drug of this.ingestedDrugs) {
+                for (const ig of drug.ingredients) {
+                    if (ig.info && !seen.has(ig.name)) {
+                        seen.add(ig.name);
+                        allIngredients.push(ig);
+                    }
+                }
+            }
+
+            container.innerHTML = allIngredients.map(ig => {
+                const t = ig.info.treatment;
+                const hours = this.hoursElapsed;
+
+                // Time-adjusted verdicts
+                const lavageVerdict = this.getTimingVerdict(t.lavage.verdict, 'lavage');
+                const charcoalVerdict = t.charcoal.multiDose ? t.charcoal.verdict : this.getTimingVerdict(t.charcoal.verdict, 'charcoal');
+
+                return `<div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 fade-in">
+                    <div class="flex items-center gap-3 mb-4">
+                        <h3 class="font-black text-xl">${ig.name}</h3>
+                        <span class="text-sm text-slate-500">(${ig.info.en})</span>
+                        ${this.getSeverityBadge(ig.severityLabel)}
+                        <span class="text-xs text-slate-400 ml-auto">摂取量: ${ig.dosePerKg.toFixed(2)} mg/kg | 経過: ${hours}時間</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- 拮抗薬 -->
+                        <div class="border rounded-xl p-4 ${t.antidote.name === 'なし' ? 'bg-slate-50' : 'bg-emerald-50 border-emerald-200'}">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-lg">💉</span>
+                                <span class="font-bold">拮抗薬</span>
+                                ${t.antidote.name !== 'なし' ? this.getVerdictBadge('recommended') : this.getVerdictBadge('not_recommended')}
+                            </div>
+                            <div class="text-sm font-bold text-emerald-800">${t.antidote.name}</div>
+                            <div class="text-xs text-slate-600 mt-1">${t.antidote.indication}</div>
+                            ${t.antidote.dosing ? `<div class="text-xs font-bold text-emerald-700 mt-1 bg-emerald-100 inline-block px-2 py-0.5 rounded">用量: ${t.antidote.dosing}</div>` : ''}
+                        </div>
+
+                        <!-- 胃洗浄 -->
+                        <div class="border rounded-xl p-4 bg-white">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-lg">🫗</span>
+                                <span class="font-bold">胃洗浄</span>
+                                ${this.getVerdictBadge(lavageVerdict)}
+                                ${hours > 1 ? '<span class="text-xs text-red-500 font-bold">⏰ 1時間超過</span>' : ''}
+                            </div>
+                            <div class="text-xs text-slate-600">${t.lavage.note}</div>
+                            ${hours > 1 ? `<div class="text-xs text-red-500 mt-1">※ 摂取から${hours}時間経過 — 胃洗浄の有効性は大幅に低下</div>` : ''}
+                        </div>
+
+                        <!-- 活性炭 -->
+                        <div class="border rounded-xl p-4 ${t.charcoal.verdict === 'contraindicated' ? 'bg-indigo-50 border-indigo-300' : 'bg-white'}">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-lg">⚫</span>
+                                <span class="font-bold">活性炭</span>
+                                ${this.getVerdictBadge(charcoalVerdict)}
+                                ${t.charcoal.multiDose ? '<span class="text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-bold">MDAC</span>' : ''}
+                            </div>
+                            <div class="text-xs text-slate-600">${t.charcoal.note}</div>
+                            ${!t.charcoal.multiDose && hours > 2 ? `<div class="text-xs text-amber-600 mt-1">※ ${hours}時間経過 — 単回投与の有効性は低下</div>` : ''}
+                            ${t.charcoal.multiDose ? `<div class="text-xs text-purple-600 mt-1 font-bold">反復投与(MDAC)適応: 時間経過に関わらず有効</div>` : ''}
+                        </div>
+
+                        <!-- 血液浄化 -->
+                        <div class="border rounded-xl p-4 ${t.dialysis.verdict === 'recommended' ? 'bg-purple-50 border-purple-200' : 'bg-white'}">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-lg">🩸</span>
+                                <span class="font-bold">血液浄化</span>
+                                ${this.getVerdictBadge(t.dialysis.verdict)}
+                            </div>
+                            <div class="text-xs text-slate-600">${t.dialysis.note}</div>
+                        </div>
+                    </div>
+
+                    <!-- その他の治療 -->
+                    ${t.other && t.other.length > 0 ? `
+                    <div class="mt-4 bg-slate-50 rounded-xl p-4">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-lg">📋</span>
+                            <span class="font-bold text-sm">その他の治療・モニタリング</span>
+                        </div>
+                        <ul class="text-xs text-slate-700 space-y-1">
+                            ${t.other.map(item => `<li class="flex items-start gap-1.5"><span class="text-slate-400 mt-0.5">▸</span>${item}</li>`).join('')}
+                        </ul>
+                    </div>` : ''}
+                </div>`;
+            }).join('');
+        }
+
+        renderSummary() {
+            const container = document.getElementById('summaryContainer');
+            if (this.ingestedDrugs.length === 0) { container.innerHTML = ''; return; }
+
+            // Determine overall severity
+            const allIngredients = [];
+            for (const drug of this.ingestedDrugs) {
+                for (const ig of drug.ingredients) {
+                    if (ig.info) allIngredients.push(ig);
+                }
+            }
+
+            const maxScore = Math.max(...allIngredients.map(ig => ig.severityScore), 0);
+            const worstLabel = maxScore >= 2 ? '致死的' : maxScore >= 1 ? '重症' : maxScore >= 0.5 ? '中等症' : '軽症';
+
+            // Collect unique antidotes
+            const antidotes = [...new Set(allIngredients.filter(ig => ig.info.treatment.antidote.name !== 'なし').map(ig => `${ig.info.treatment.antidote.name} (for ${ig.name})`))];
+
+            // Charcoal recommendation
+            const charcoalNeeded = allIngredients.some(ig => {
+                const v = ig.info.treatment.charcoal.verdict;
+                return v === 'recommended' || v === 'consider';
+            });
+            const mdacNeeded = allIngredients.some(ig => ig.info.treatment.charcoal.multiDose);
+
+            // Dialysis
+            const dialysisNeeded = allIngredients.some(ig => ig.info.treatment.dialysis.verdict === 'recommended');
+            const dialysisConsider = allIngredients.some(ig => ig.info.treatment.dialysis.verdict === 'consider');
+
+            // Charcoal contraindicated
+            const charcoalContraindicated = allIngredients.some(ig => ig.info.treatment.charcoal.verdict === 'contraindicated');
+
+            container.innerHTML = `
+                <div class="mb-4">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="text-2xl font-black">総合重症度:</span>
+                        ${this.getSeverityBadge(worstLabel)}
+                        <span class="text-sm text-slate-500">(最も重症な成分の重症度)</span>
+                    </div>
+                    <div class="text-sm text-slate-600">摂取薬剤数: ${this.ingestedDrugs.length}品目 / 成分数: ${allIngredients.length}種類 / 経過時間: ${this.hoursElapsed}時間</div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div class="bg-slate-50 rounded-xl p-4">
+                        <h4 class="font-bold mb-2">🚨 緊急アクション</h4>
+                        <ul class="text-sm space-y-1.5">
+                            ${maxScore >= 1 ? '<li class="text-red-700 font-bold">→ ICU管理を検討</li>' : ''}
+                            ${antidotes.length > 0 ? antidotes.map(a => `<li class="text-emerald-700 font-bold">→ 拮抗薬: ${a}</li>`).join('') : '<li class="text-slate-500">拮抗薬: 適応なし</li>'}
+                            ${this.hoursElapsed <= 1 && allIngredients.some(ig => ig.info.treatment.lavage.verdict !== 'not_recommended') ? '<li class="text-blue-700 font-bold">→ 胃洗浄を検討（1時間以内）</li>' : '<li class="text-slate-400">胃洗浄: 時間経過により非推奨</li>'}
+                            ${charcoalContraindicated ? '<li class="text-indigo-700 font-bold">⚠ 活性炭禁忌の成分あり（リチウム等）</li>' : ''}
+                            ${charcoalNeeded && !charcoalContraindicated ? `<li class="text-green-700 font-bold">→ 活性炭投与を推奨${mdacNeeded ? '（反復投与MDAC適応あり）' : ''}</li>` : ''}
+                            ${dialysisNeeded ? '<li class="text-purple-700 font-bold">→ 血液浄化を強く検討</li>' : dialysisConsider ? '<li class="text-purple-600">→ 重症時は血液浄化を検討</li>' : '<li class="text-slate-400">血液浄化: 適応低い</li>'}
+                        </ul>
+                    </div>
+                    <div class="bg-slate-50 rounded-xl p-4">
+                        <h4 class="font-bold mb-2">📊 モニタリング項目</h4>
+                        <ul class="text-sm space-y-1">
+                            <li>▸ バイタルサイン（意識, 呼吸, 循環）</li>
+                            <li>▸ 心電図（12誘導 + モニタリング）</li>
+                            <li>▸ 血液ガス, 電解質</li>
+                            <li>▸ 血算, 肝機能, 腎機能, 凝固</li>
+                            ${allIngredients.some(ig => ['アセトアミノフェン','アスピリン','バルプロ酸','カルバマゼピン','フェニトイン','炭酸リチウム','テオフィリン','ジゴキシン'].includes(ig.name)) ? '<li class="font-bold text-blue-700">▸ 血中薬物濃度測定</li>' : ''}
+                            ${allIngredients.some(ig => ig.info.allSymptoms && ig.info.allSymptoms.includes('低血糖')) ? '<li class="font-bold text-amber-700">▸ 血糖モニタリング（頻回）</li>' : ''}
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="mt-4 bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-800">
+                    <strong>⚠ 注意:</strong> 本ツールの情報は一般的な中毒診療ガイドラインに基づく参考情報です。
+                    個々の症例における最終的な治療判断は、患者の全身状態・合併症・複合中毒の可能性を考慮し、臨床医の判断により行ってください。
+                    必要に応じて中毒情報センター（つくば: 029-852-9999 / 大阪: 072-727-2499）にご相談ください。
+                </div>
+            `;
+        }
+
+        // --- Utility ---
+        showAlert(msg) {
+            // Create a temporary alert
+            const el = document.createElement('div');
+            el.className = 'fixed top-20 right-4 bg-red-500 text-white px-6 py-3 rounded-xl shadow-2xl z-50 font-bold text-sm fade-in';
+            el.textContent = msg;
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 3000);
+        }
+
+        resetAll() {
+            if (!confirm('全てのデータをリセットしますか？')) return;
+            this.ingestedDrugs = [];
+            this.checkedSymptoms.clear();
+            this.renderAll();
+        }
+    }
+
+    // --- Initialize ---
+    const app = new ToxicNavi();
+
+    // Close dropdown on outside click
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#drugSearch') && !e.target.closest('#acDropdown')) {
+            document.getElementById('acDropdown').classList.add('hidden');
+        }
+    });
     </script>
 </body>
 </html>
