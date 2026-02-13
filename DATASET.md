@@ -33,6 +33,8 @@ python3 scripts/fetch_pmda_iyaku_dataset.py --from-date 20100101 --to-date 20260
   - 一般名から分解した成分候補
 - `data/pmda_iyaku_ingredient_index.json`
   - 医療用由来の成分名逆引きインデックス
+- `data/jpic_compatible_schema.json`
+  - アプリ内で使用するJPIC互換スキーマ定義
 
 ## 収集ロジック概要
 
@@ -51,6 +53,17 @@ python3 scripts/fetch_pmda_iyaku_dataset.py --from-date 20100101 --to-date 20260
 3. 各レンジで `exportSearchResult/csv` を取得
 4. CSV の一般名・販売名・製造販売業者を正規化して重複除去
 5. 一般名から成分候補を分解し JSON 化
+
+## アプリ側スキーマ実装
+
+- `index.html` 内で `jpic-compatible-v1` プロファイルを実装
+- 各成分に以下の項目を付与
+  - 中毒量閾値（注意/中毒/重症/危機）
+  - 症状タイムライン（時間帯別、赤旗所見）
+  - 体内動態（Tmax, 半減期, Vd, 蛋白結合, 代謝, 排泄）
+  - 治療ガイド（除染、拮抗薬、血液浄化、支持療法）
+  - 分析法（推奨検査、解釈）
+  - 根拠情報（出典、更新日、レベル）
 
 ## 注意
 

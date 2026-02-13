@@ -1,0 +1,108 @@
+{
+  "schema_id": "jpic-compatible-v1",
+  "description": "JPIC製品名索引/中毒情報ページ構成を参考にしたアプリ内互換スキーマ",
+  "required_fields": [
+    "schemaVersion",
+    "ingredientName",
+    "aliases",
+    "toxicThresholdMgKg",
+    "symptomTimeline",
+    "toxicokinetics",
+    "treatmentGuide",
+    "analysis",
+    "evidence"
+  ],
+  "field_definitions": {
+    "toxicThresholdMgKg": {
+      "caution": "症状発現注意域 (mg/kg)",
+      "toxic": "中毒発現域 (mg/kg)",
+      "severe": "重症化リスク域 (mg/kg)",
+      "critical": "生命危機域 (mg/kg)"
+    },
+    "symptomTimeline": [
+      {
+        "window": "時間帯 (例: 0-4時間)",
+        "symptoms": "この時間帯で想定される症状配列",
+        "redFlags": "重症徴候の配列"
+      }
+    ],
+    "toxicokinetics": {
+      "tmaxHours": "最高血中濃度到達時間",
+      "halfLifeHours": "半減期",
+      "vdLKg": "分布容積",
+      "proteinBindingPct": "蛋白結合率",
+      "metabolism": "代謝情報",
+      "elimination": "排泄情報"
+    },
+    "treatmentGuide": {
+      "decontamination": "胃洗浄/活性炭など消化管除染指針",
+      "antidote": "拮抗薬・解毒薬方針",
+      "extracorporeal": "血液浄化の有効性と適応",
+      "other": "その他の支持療法"
+    },
+    "analysis": {
+      "recommendedTests": "推奨検査リスト",
+      "interpretation": "測定結果の解釈",
+      "notes": "補足事項"
+    },
+    "evidence": {
+      "source": "根拠情報源",
+      "updatedAt": "最終更新日",
+      "level": "根拠レベル"
+    }
+  },
+  "example": {
+    "schemaVersion": "jpic-compatible-v1",
+    "ingredientName": "アセトアミノフェン",
+    "aliases": [
+      "Acetaminophen",
+      "パラセタモール"
+    ],
+    "toxicThresholdMgKg": {
+      "caution": 75,
+      "toxic": 150,
+      "severe": 250,
+      "critical": 300
+    },
+    "symptomTimeline": [
+      {
+        "window": "0-4時間",
+        "symptoms": [
+          "嘔気",
+          "嘔吐"
+        ],
+        "redFlags": [
+          "反復嘔吐"
+        ]
+      }
+    ],
+    "toxicokinetics": {
+      "tmaxHours": "0.5-2",
+      "halfLifeHours": "2-4",
+      "vdLKg": "0.8-1.0",
+      "proteinBindingPct": "10-25",
+      "metabolism": "主に肝代謝",
+      "elimination": "腎排泄"
+    },
+    "treatmentGuide": {
+      "decontamination": "摂取1-2時間以内の活性炭投与を検討",
+      "antidote": "N-アセチルシステイン",
+      "extracorporeal": "通常不要",
+      "other": "肝機能モニタリング"
+    },
+    "analysis": {
+      "recommendedTests": [
+        "血中濃度",
+        "AST/ALT",
+        "PT-INR"
+      ],
+      "interpretation": "時間軸と血中濃度で重症度判定",
+      "notes": "重症時は凝固異常を追跡"
+    },
+    "evidence": {
+      "source": "JPIC互換内部マスタ",
+      "updatedAt": "2026-02-13",
+      "level": "training"
+    }
+  }
+}
