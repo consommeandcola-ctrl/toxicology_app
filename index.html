@@ -60,17 +60,25 @@
 
         <section class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
             <h2 class="text-lg font-bold mb-4 border-b pb-2">2) 摂取薬剤入力（製剤名/成分名、内服量）</h2>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <label class="text-sm font-medium md:col-span-2">
                     薬剤名（製剤名 or 成分名）
                     <input id="drugInput" list="drugCandidates" type="text" placeholder="例: カロナール錠500" class="mt-1 w-full border rounded p-2">
                 </label>
                 <datalist id="drugCandidates"></datalist>
                 <label class="text-sm font-medium">
-                    内服量 (mg)
+                    規格 (mg/錠)
+                    <input id="strengthInput" type="number" min="0" step="0.1" placeholder="例: 500" class="mt-1 w-full border rounded p-2">
+                </label>
+                <label class="text-sm font-medium">
+                    錠数
+                    <input id="tabletCountInput" type="number" min="0" step="1" placeholder="例: 20" class="mt-1 w-full border rounded p-2">
+                </label>
+                <label class="text-sm font-medium">
+                    総量 (mg)
                     <input id="amountInput" type="number" min="0" placeholder="例: 10000" class="mt-1 w-full border rounded p-2">
                 </label>
-                <div class="flex flex-col sm:flex-row items-end gap-2">
+                <div class="flex flex-col sm:flex-row items-end gap-2 md:col-span-5">
                     <button id="addDrugBtn" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition">
                         追加
                     </button>
@@ -79,6 +87,9 @@
                     </button>
                 </div>
             </div>
+            <p id="amountCalcStatus" class="mt-2 text-xs text-slate-500">
+                規格と錠数を入力すると総量を自動計算します（例: 500 mg/錠 × 20 錠 = 10000 mg）
+            </p>
             <p id="datasetStatus" class="mt-3 text-xs text-slate-500">
                 外部データセット: 読み込み中...
             </p>
@@ -162,6 +173,7 @@
                 this.ocrBusy = false;
                 this.ocrLastText = "";
                 this.searchEntries = [];
+                this.productStrengthHintsMg = {};
                 this.entryCounter = 1;
                 this.commonSymptoms = [
                     "嘔気", "嘔吐", "腹痛", "頻脈", "低血圧", "痙攣", "意識障害",
@@ -350,6 +362,7 @@
                 Object.entries(this.ingredientSynonyms).forEach(([alias, canonical]) => {
                     this.ingredientSynonymIndex[this.normalizeName(alias)] = canonical;
                 });
+                this.seedStrengthHintsFromProductNames();
 
                 this.bootstrapJpicSchema();
                 this.datasetLoaded = false;
@@ -365,11 +378,34 @@
             bindEvents() {
                 document.getElementById("addDrugBtn").addEventListener("click", () => this.addDrug());
                 document.getElementById("clearBtn").addEventListener("click", () => this.clearAll());
+                document.getElementById("strengthInput").addEventListener("input", () => {
+                    const strengthInput = document.getElementById("strengthInput");
+                    strengthInput.dataset.autoFilled = "0";
+                    this.recalculateTotalAmount();
+                });
+                document.getElementById("strengthInput").addEventListener("keydown", (event) => {
+                    if (event.key === "Enter") this.addDrug();
+                });
+                document.getElementById("tabletCountInput").addEventListener("input", () => this.recalculateTotalAmount());
+                document.getElementById("tabletCountInput").addEventListener("keydown", (event) => {
+                    if (event.key === "Enter") this.addDrug();
+                });
+                document.getElementById("amountInput").addEventListener("input", () => {
+                    if (!this.hasTabletInputs()) {
+                        this.setAmountCalcStatus("総量を手入力中です。規格と錠数があれば自動計算に切り替わります。", "info");
+                    }
+                });
                 document.getElementById("amountInput").addEventListener("keydown", (event) => {
                     if (event.key === "Enter") this.addDrug();
                 });
                 document.getElementById("drugInput").addEventListener("keydown", (event) => {
                     if (event.key === "Enter") this.addDrug();
+                });
+                document.getElementById("drugInput").addEventListener("change", () => {
+                    this.tryAutoFillStrength();
+                });
+                document.getElementById("drugInput").addEventListener("blur", () => {
+                    this.tryAutoFillStrength();
                 });
                 document.getElementById("priorityList").addEventListener("click", (event) => {
                     const button = event.target.closest("[data-remove-id]");
@@ -806,6 +842,166 @@
                 } else {
                     statusEl.classList.add("text-slate-500");
                 }
+            }
+
+            setAmountCalcStatus(message, tone = "info") {
+                const statusEl = document.getElementById("amountCalcStatus");
+                if (!statusEl) return;
+                statusEl.textContent = message;
+                statusEl.classList.remove("text-slate-500", "text-green-700", "text-amber-700", "text-rose-700");
+                if (tone === "success") statusEl.classList.add("text-green-700");
+                else if (tone === "warn") statusEl.classList.add("text-amber-700");
+                else if (tone === "error") statusEl.classList.add("text-rose-700");
+                else statusEl.classList.add("text-slate-500");
+            }
+
+            hasTabletInputs() {
+                const strength = Number(document.getElementById("strengthInput").value);
+                const count = Number(document.getElementById("tabletCountInput").value);
+                return Number.isFinite(strength) && strength > 0 && Number.isFinite(count) && count > 0;
+            }
+
+            amountTokenToMg(parsedAmount) {
+                if (!parsedAmount) return null;
+                const value = Number(parsedAmount.value);
+                if (!Number.isFinite(value) || value <= 0) return null;
+                const unit = String(parsedAmount.unit || "").toLowerCase();
+                if (unit === "mg") return value;
+                if (unit === "g") return value * 1000;
+                if (unit === "μg" || unit === "µg" || unit === "mcg") return value / 1000;
+                return null;
+            }
+
+            parseDoseUnitCountFromText(ingredientText) {
+                const normalized = String(ingredientText || "").normalize("NFKC").replace(/\s+/g, "");
+                if (!normalized) return null;
+                const match = normalized.match(/([0-9]+(?:\.[0-9]+)?)(錠|カプセル)中/)
+                    || normalized.match(/1回量[（(]([0-9]+(?:\.[0-9]+)?)(錠|カプセル)[）)]中/);
+                if (!match) return null;
+                return {
+                    count: Number(match[1]),
+                    unit: match[2]
+                };
+            }
+
+            inferStrengthFromProductName(productName) {
+                const normalized = String(productName || "").normalize("NFKC");
+                const withMg = normalized.match(/([0-9]+(?:\.[0-9]+)?)\s*mg/i);
+                if (withMg) return Number(withMg[1]);
+
+                const tabletValue = normalized.match(/(?:OD)?錠\s*([0-9]+(?:\.[0-9]+)?)/i);
+                if (tabletValue) return Number(tabletValue[1]);
+                return null;
+            }
+
+            estimateStrengthHintFromProduct(product) {
+                const dosageForm = String(product?.dosage_form || "");
+                const looksTablet = dosageForm.includes("錠");
+                if (!looksTablet) {
+                    return this.inferStrengthFromProductName(product?.product_name || "");
+                }
+
+                const unitInfo = this.parseDoseUnitCountFromText(product?.ingredient_text || "");
+                if (!unitInfo || unitInfo.unit !== "錠" || !Number.isFinite(unitInfo.count) || unitInfo.count <= 0) {
+                    return this.inferStrengthFromProductName(product?.product_name || "");
+                }
+
+                const ingredients = Array.isArray(product?.ingredients) ? product.ingredients : [];
+                const totalMg = ingredients.reduce((sum, item) => {
+                    const mg = this.amountTokenToMg(this.parseAmountToken(item?.amount || ""));
+                    return Number.isFinite(mg) ? sum + mg : sum;
+                }, 0);
+
+                if (Number.isFinite(totalMg) && totalMg > 0) {
+                    return totalMg / unitInfo.count;
+                }
+                return this.inferStrengthFromProductName(product?.product_name || "");
+            }
+
+            seedStrengthHintsFromProductNames() {
+                Object.keys(this.productDB).forEach((productName) => {
+                    const hinted = this.inferStrengthFromProductName(productName);
+                    if (Number.isFinite(hinted) && hinted > 0) {
+                        this.productStrengthHintsMg[productName] = hinted;
+                    }
+                });
+            }
+
+            findBestProductKeyByPartialName(targetName) {
+                const normalizedTarget = this.normalizeName(targetName);
+                if (!normalizedTarget || normalizedTarget.length < 2) return null;
+                const candidates = Object.keys(this.productDB).filter((key) => {
+                    const normalizedKey = this.normalizeName(key);
+                    return normalizedKey.includes(normalizedTarget) || normalizedTarget.includes(normalizedKey);
+                });
+                if (candidates.length === 0) return null;
+                if (candidates.length === 1) return candidates[0];
+
+                const startsWith = candidates.filter((key) => this.normalizeName(key).startsWith(normalizedTarget));
+                if (startsWith.length === 1) return startsWith[0];
+                return null;
+            }
+
+            estimateStrengthForDrugName(drugName) {
+                if (!drugName) return null;
+                const exactProductKey = this.findKeyByNormalizedName(this.productDB, drugName);
+                if (exactProductKey && Number.isFinite(this.productStrengthHintsMg[exactProductKey])) {
+                    return this.productStrengthHintsMg[exactProductKey];
+                }
+                if (exactProductKey) {
+                    const inferred = this.inferStrengthFromProductName(exactProductKey);
+                    if (Number.isFinite(inferred) && inferred > 0) return inferred;
+                }
+
+                const partialProductKey = this.findBestProductKeyByPartialName(drugName);
+                if (partialProductKey && Number.isFinite(this.productStrengthHintsMg[partialProductKey])) {
+                    return this.productStrengthHintsMg[partialProductKey];
+                }
+                if (partialProductKey) {
+                    const inferred = this.inferStrengthFromProductName(partialProductKey);
+                    if (Number.isFinite(inferred) && inferred > 0) return inferred;
+                }
+
+                const direct = this.inferStrengthFromProductName(drugName);
+                if (Number.isFinite(direct) && direct > 0) return direct;
+                return null;
+            }
+
+            tryAutoFillStrength() {
+                const drugName = document.getElementById("drugInput").value.trim();
+                if (!drugName) return;
+
+                const strengthInput = document.getElementById("strengthInput");
+                const allowOverride = !strengthInput.value || strengthInput.dataset.autoFilled === "1";
+                if (!allowOverride) return;
+
+                const suggested = this.estimateStrengthForDrugName(drugName);
+                if (!Number.isFinite(suggested) || suggested <= 0) return;
+
+                const displayValue = Number.isInteger(suggested) ? String(suggested) : this.formatNumber(suggested, 2);
+                strengthInput.value = displayValue;
+                strengthInput.dataset.autoFilled = "1";
+                this.recalculateTotalAmount();
+                this.setAmountCalcStatus(`規格候補を自動入力: ${displayValue} mg/錠`, "success");
+            }
+
+            recalculateTotalAmount() {
+                const strength = Number(document.getElementById("strengthInput").value);
+                const count = Number(document.getElementById("tabletCountInput").value);
+                const amountInput = document.getElementById("amountInput");
+                if (!Number.isFinite(strength) || strength <= 0 || !Number.isFinite(count) || count <= 0) {
+                    if (!amountInput.value) {
+                        this.setAmountCalcStatus("規格と錠数を入力すると総量を自動計算します。", "info");
+                    }
+                    return null;
+                }
+
+                const total = strength * count;
+                const totalText = Number.isInteger(total) ? String(total) : this.formatNumber(total, 2);
+                amountInput.value = totalText;
+                const countText = Number.isInteger(count) ? String(count) : this.formatNumber(count, 2);
+                this.setAmountCalcStatus(`${this.formatNumber(strength, 2)} mg/錠 × ${countText} 錠 = ${totalText} mg`, "success");
+                return total;
             }
 
             setOcrStatus(message, tone = "info") {
@@ -1467,6 +1663,7 @@
             mergeProductsToDatabase(products) {
                 let addedProducts = 0;
                 let addedIngredients = 0;
+                let updatedStrengthHints = 0;
 
                 products.forEach((product) => {
                     const productName = String(product.product_name || "").trim();
@@ -1479,6 +1676,15 @@
                         addedProducts += 1;
                     }
 
+                    const strengthHint = this.estimateStrengthHintFromProduct(product);
+                    if (Number.isFinite(strengthHint) && strengthHint > 0) {
+                        const current = this.productStrengthHintsMg[productName];
+                        if (!Number.isFinite(current)) {
+                            this.productStrengthHintsMg[productName] = strengthHint;
+                            updatedStrengthHints += 1;
+                        }
+                    }
+
                     ratioDefs.forEach((item) => {
                         if (!this.ingredientDB[item.ingredient]) {
                             this.ingredientDB[item.ingredient] = this.buildUnknownIngredientInfo(item.ingredient);
@@ -1487,7 +1693,7 @@
                     });
                 });
 
-                return { addedProducts, addedIngredients };
+                return { addedProducts, addedIngredients, updatedStrengthHints };
             }
 
             async loadDatasetFile(path, label) {
@@ -1501,7 +1707,8 @@
                     label,
                     loadedProducts: products.length,
                     addedProducts: merged.addedProducts,
-                    addedIngredients: merged.addedIngredients
+                    addedIngredients: merged.addedIngredients,
+                    updatedStrengthHints: merged.updatedStrengthHints
                 };
             }
 
@@ -1531,11 +1738,13 @@
 
                 const totalAddedProducts = loaded.reduce((sum, item) => sum + item.addedProducts, 0);
                 const totalAddedIngredients = loaded.reduce((sum, item) => sum + item.addedIngredients, 0);
+                const totalStrengthHints = loaded.reduce((sum, item) => sum + (item.updatedStrengthHints || 0), 0);
                 const sourceLabel = loaded.map((item) => item.label).join(" / ");
                 this.setDatasetStatus(
-                    `${sourceLabel} 読込完了: 製品 +${totalAddedProducts} 件 / 新規成分 +${totalAddedIngredients} 件`,
+                    `${sourceLabel} 読込完了: 製品 +${totalAddedProducts} 件 / 新規成分 +${totalAddedIngredients} 件 / 規格ヒント +${totalStrengthHints} 件`,
                     "success"
                 );
+                this.tryAutoFillStrength();
             }
 
             renderSymptomChips() {
@@ -1629,11 +1838,21 @@
             addDrug() {
                 const drugInput = document.getElementById("drugInput");
                 const amountInput = document.getElementById("amountInput");
+                const strengthInput = document.getElementById("strengthInput");
+                const tabletCountInput = document.getElementById("tabletCountInput");
                 const drugName = drugInput.value.trim();
-                const amountMg = Number(amountInput.value);
+                if (!drugName) {
+                    alert("薬剤名を入力してください。");
+                    return;
+                }
 
-                if (!drugName || !Number.isFinite(amountMg) || amountMg <= 0) {
-                    alert("薬剤名と内服量を正しく入力してください。");
+                this.tryAutoFillStrength();
+                const autoAmount = this.recalculateTotalAmount();
+                const manualAmount = Number(amountInput.value);
+                const amountMg = Number.isFinite(autoAmount) && autoAmount > 0 ? autoAmount : manualAmount;
+
+                if (!Number.isFinite(amountMg) || amountMg <= 0) {
+                    alert("総量(mg)を入力するか、規格(mg/錠)と錠数を入力してください。");
                     return;
                 }
                 const ingestionContext = this.buildIngestionContextFromInputs({ showAlert: true });
@@ -1644,6 +1863,10 @@
                 this.render();
 
                 amountInput.value = "";
+                tabletCountInput.value = "";
+                strengthInput.value = "";
+                strengthInput.dataset.autoFilled = "0";
+                this.setAmountCalcStatus("規格と錠数を入力すると総量を自動計算します。", "info");
                 drugInput.value = "";
                 drugInput.focus();
             }
