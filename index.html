@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ToxicNavi - 中毒診療フロー支援</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
         .severity-critical { background: #7f1d1d; color: #fff; }
         .severity-high { background: #dc2626; color: #fff; }
@@ -80,6 +81,38 @@
         </section>
 
         <section class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
+            <h2 class="text-lg font-bold mb-4 border-b pb-2">2.5) 写真取り込みと自動薬剤抽出</h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <label class="text-sm font-medium md:col-span-2">
+                    画像ファイル（複数枚）
+                    <input id="ocrImageInput" type="file" accept="image/*" multiple class="mt-1 w-full border rounded p-2 bg-white">
+                </label>
+                <div class="md:col-span-2 grid grid-cols-2 gap-2">
+                    <button id="runOcrBtn" class="bg-indigo-600 text-white font-bold py-2 px-3 rounded hover:bg-indigo-700 transition">
+                        OCR実行
+                    </button>
+                    <button id="parseOcrTextBtn" class="bg-slate-700 text-white font-bold py-2 px-3 rounded hover:bg-slate-800 transition">
+                        テキスト解析
+                    </button>
+                    <button id="importDetectedBtn" class="bg-emerald-600 text-white font-bold py-2 px-3 rounded hover:bg-emerald-700 transition">
+                        診療評価へ反映
+                    </button>
+                    <button id="clearDetectedBtn" class="bg-slate-200 text-slate-700 font-bold py-2 px-3 rounded hover:bg-slate-300 transition">
+                        抽出結果クリア
+                    </button>
+                </div>
+            </div>
+            <p id="ocrStatus" class="mt-3 text-xs text-slate-500">OCR待機中</p>
+            <label class="text-sm font-medium block mt-3">
+                OCR/貼り付けテキスト
+                <textarea id="ocrRawText" rows="6" class="mt-1 w-full border rounded p-2" placeholder="画像OCR結果や中毒メモを貼り付けると、薬剤名・1錠量・錠数を抽出します。"></textarea>
+            </label>
+            <div id="detectedDrugTable" class="mt-3 text-sm">
+                <p class="text-slate-400">解析すると薬剤候補がここに表示されます</p>
+            </div>
+        </section>
+
+        <section class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
             <h2 class="text-lg font-bold mb-3 border-b pb-2">3) 診療フロー（自動化している処理）</h2>
             <ol class="list-decimal pl-5 text-sm text-slate-700 space-y-1">
                 <li>入力した薬剤名から製剤データを参照し、含有成分を展開</li>
@@ -132,6 +165,10 @@
         class ToxicNaviApp {
             constructor() {
                 this.entries = [];
+                this.detectedIngestionItems = [];
+                this.ocrBusy = false;
+                this.ocrLastText = "";
+                this.searchEntries = [];
                 this.entryCounter = 1;
                 this.commonSymptoms = [
                     "嘔気", "嘔吐", "腹痛", "頻脈", "低血圧", "痙攣", "意識障害",
@@ -326,6 +363,7 @@
                 this.bindEvents();
                 this.populateDrugCandidates();
                 this.renderSymptomChips();
+                this.renderDetectedDrugTable();
                 this.loadExternalDatasets();
             }
 
@@ -343,6 +381,10 @@
                     if (!button) return;
                     this.removeEntry(Number(button.dataset.removeId));
                 });
+                document.getElementById("runOcrBtn").addEventListener("click", () => this.runOcrFromImages());
+                document.getElementById("parseOcrTextBtn").addEventListener("click", () => this.parseAndMatchOcrText());
+                document.getElementById("importDetectedBtn").addEventListener("click", () => this.importDetectedItemsToAssessment());
+                document.getElementById("clearDetectedBtn").addEventListener("click", () => this.clearDetectedItems());
             }
 
             bootstrapJpicSchema() {
@@ -762,6 +804,327 @@
                 }
             }
 
+            setOcrStatus(message, tone = "info") {
+                const statusEl = document.getElementById("ocrStatus");
+                if (!statusEl) return;
+                statusEl.textContent = message;
+                statusEl.classList.remove("text-slate-500", "text-green-700", "text-amber-700", "text-rose-700");
+                if (tone === "success") statusEl.classList.add("text-green-700");
+                else if (tone === "warn") statusEl.classList.add("text-amber-700");
+                else if (tone === "error") statusEl.classList.add("text-rose-700");
+                else statusEl.classList.add("text-slate-500");
+            }
+
+            buildSearchEntries() {
+                const byNorm = new Map();
+                const pushEntry = (name, type) => {
+                    const normalized = this.normalizeName(name);
+                    if (!normalized) return;
+                    const current = byNorm.get(normalized);
+                    if (!current || (current.type === "ingredient" && type === "product")) {
+                        byNorm.set(normalized, { name, type, normalized });
+                    }
+                };
+
+                Object.keys(this.productDB).forEach((name) => pushEntry(name, "product"));
+                Object.keys(this.ingredientDB).forEach((name) => pushEntry(name, "ingredient"));
+                this.searchEntries = [...byNorm.values()];
+            }
+
+            buildIngestionContextFromInputs({ showAlert = true } = {}) {
+                const patientWeight = Number(document.getElementById("patientWeight").value);
+                const elapsedMin = Number(document.getElementById("elapsedMinutes").value);
+                const airwaySecured = document.getElementById("airwaySecured").checked;
+                const observedSymptoms = this.parseSymptoms(document.getElementById("observedSymptoms").value);
+
+                if (!Number.isFinite(patientWeight) || patientWeight <= 0) {
+                    if (showAlert) alert("体重(kg)を正しく入力してください。");
+                    return null;
+                }
+                if (!Number.isFinite(elapsedMin) || elapsedMin < 0) {
+                    if (showAlert) alert("摂取からの時間(分)を0以上で入力してください。");
+                    return null;
+                }
+
+                return {
+                    patientWeight,
+                    elapsedMin,
+                    airwaySecured,
+                    observedSymptoms
+                };
+            }
+
+            normalizeDrugNameCandidate(rawName) {
+                const stopWords = [
+                    "ssri", "snri", "nassa", "抗うつ薬", "抗不安薬", "睡眠薬", "抗精神病薬", "解熱鎮痛薬",
+                    "主なリスク", "一般名", "薬剤名", "推定合計量", "摂取錠数", "1錠含有量", "mg", "錠"
+                ];
+                let name = String(rawName || "")
+                    .normalize("NFKC")
+                    .replace(/[|｜]/g, " ")
+                    .replace(/[：:]/g, " ")
+                    .replace(/^[\-\s・]+/, "")
+                    .replace(/\s+/g, " ")
+                    .trim();
+
+                stopWords.forEach((word) => {
+                    const pattern = new RegExp(word, "ig");
+                    name = name.replace(pattern, " ");
+                });
+                name = name.replace(/\s+/g, " ").trim();
+                return name;
+            }
+
+            convertDoseToMg(value, unit) {
+                const numeric = Number(value);
+                if (!Number.isFinite(numeric)) return null;
+                const normalizedUnit = String(unit || "").toLowerCase().replace("ｍｇ", "mg").replace("ｇ", "g");
+                if (normalizedUnit === "mg") return numeric;
+                if (normalizedUnit === "g") return numeric * 1000;
+                if (normalizedUnit === "μg" || normalizedUnit === "µg" || normalizedUnit === "ug" || normalizedUnit === "mcg") {
+                    return numeric / 1000;
+                }
+                return null;
+            }
+
+            matchDrugCandidate(rawName) {
+                const normalizedRaw = this.normalizeName(rawName).replace(/[0-9]/g, "");
+                if (!normalizedRaw) return null;
+
+                const exact = this.searchEntries.find((entry) => entry.normalized === normalizedRaw);
+                if (exact) {
+                    return { ...exact, score: 1, strategy: "exact" };
+                }
+
+                const candidates = this.searchEntries
+                    .filter((entry) => entry.normalized.includes(normalizedRaw) || normalizedRaw.includes(entry.normalized))
+                    .map((entry) => {
+                        const overlap = Math.min(entry.normalized.length, normalizedRaw.length) / Math.max(entry.normalized.length, normalizedRaw.length);
+                        const typeBonus = entry.type === "product" ? 0.08 : 0;
+                        const score = Math.min(0.96, 0.58 + overlap * 0.36 + typeBonus);
+                        return { ...entry, score, strategy: "contains" };
+                    })
+                    .sort((a, b) => b.score - a.score);
+
+                return candidates.length > 0 ? candidates[0] : null;
+            }
+
+            extractDrugCandidatesFromText(rawText) {
+                const normalizedText = String(rawText || "").replace(/\r/g, "");
+                const lines = normalizedText.split("\n").map((line) => line.trim()).filter(Boolean);
+                const candidates = [];
+
+                for (const line of lines) {
+                    const lineNormalized = line.normalize("NFKC");
+                    if (!/(錠|mg|g|μg|ug|mcg)/i.test(lineNormalized)) continue;
+                    if (/(bp|hr|rr|spo2|etco2|gcs|jcs|mmhg|体温)/i.test(lineNormalized) && !/錠/.test(lineNormalized)) continue;
+
+                    const countMatch = lineNormalized.match(/([0-9]+(?:\.[0-9]+)?)\s*錠/);
+                    if (!countMatch) continue;
+                    const tabletCount = Number(countMatch[1]);
+                    if (!Number.isFinite(tabletCount) || tabletCount <= 0) continue;
+
+                    const doseMatches = [...lineNormalized.matchAll(/([0-9]+(?:\.[0-9]+)?)\s*(mg|ｍｇ|g|ｇ|μg|µg|ug|mcg)/gi)];
+                    let strengthPerTabletMg = null;
+                    let totalAmountMg = null;
+                    if (doseMatches.length > 0) {
+                        strengthPerTabletMg = this.convertDoseToMg(doseMatches[0][1], doseMatches[0][2]);
+                    }
+                    if (doseMatches.length > 1) {
+                        totalAmountMg = this.convertDoseToMg(doseMatches[doseMatches.length - 1][1], doseMatches[doseMatches.length - 1][2]);
+                    }
+                    if (!Number.isFinite(totalAmountMg) && Number.isFinite(strengthPerTabletMg)) {
+                        totalAmountMg = strengthPerTabletMg * tabletCount;
+                    }
+
+                    const firstDoseIndex = doseMatches.length > 0 ? doseMatches[0].index : lineNormalized.length;
+                    const countIndex = countMatch.index ?? lineNormalized.length;
+                    const nameIndex = Math.min(firstDoseIndex, countIndex);
+                    const nameCandidate = this.normalizeDrugNameCandidate(lineNormalized.slice(0, nameIndex));
+                    if (!nameCandidate || nameCandidate.length < 2) continue;
+
+                    const matched = this.matchDrugCandidate(nameCandidate);
+                    const resolvedName = matched ? matched.name : nameCandidate;
+                    const matchType = matched ? `${matched.type}:${matched.strategy}` : "none";
+                    const confidence = matched ? Number(matched.score.toFixed(2)) : 0;
+
+                    candidates.push({
+                        sourceLine: lineNormalized,
+                        detectedName: nameCandidate,
+                        resolvedName,
+                        matchType,
+                        confidence,
+                        tabletCount,
+                        strengthPerTabletMg: Number.isFinite(strengthPerTabletMg) ? strengthPerTabletMg : null,
+                        totalAmountMg: Number.isFinite(totalAmountMg) ? totalAmountMg : null
+                    });
+                }
+
+                const mergedMap = new Map();
+                candidates.forEach((item) => {
+                    const key = `${item.resolvedName}__${item.strengthPerTabletMg || "na"}`;
+                    const current = mergedMap.get(key);
+                    if (!current) {
+                        mergedMap.set(key, { ...item });
+                        return;
+                    }
+                    current.tabletCount += item.tabletCount;
+                    if (Number.isFinite(current.totalAmountMg) && Number.isFinite(item.totalAmountMg)) {
+                        current.totalAmountMg += item.totalAmountMg;
+                    } else {
+                        current.totalAmountMg = current.totalAmountMg ?? item.totalAmountMg;
+                    }
+                    current.confidence = Math.max(current.confidence, item.confidence);
+                });
+
+                return [...mergedMap.values()];
+            }
+
+            parseAndMatchOcrText() {
+                const rawText = document.getElementById("ocrRawText").value;
+                const parsed = this.extractDrugCandidatesFromText(rawText);
+                this.detectedIngestionItems = parsed;
+                this.renderDetectedDrugTable();
+
+                if (parsed.length === 0) {
+                    this.setOcrStatus("薬剤候補を抽出できませんでした。テキスト形式を確認してください。", "warn");
+                } else {
+                    const importable = parsed.filter((item) => Number.isFinite(item.totalAmountMg) && item.totalAmountMg > 0).length;
+                    this.setOcrStatus(`解析完了: ${parsed.length} 件検出（評価へ反映可能 ${importable} 件）`, "success");
+                }
+            }
+
+            async runOcrFromImages() {
+                const fileInput = document.getElementById("ocrImageInput");
+                const files = [...(fileInput.files || [])];
+                if (files.length === 0) {
+                    this.setOcrStatus("画像ファイルを選択してください。", "warn");
+                    return;
+                }
+                if (typeof Tesseract === "undefined") {
+                    this.setOcrStatus("OCRエンジンの読み込みに失敗しました。", "error");
+                    return;
+                }
+                if (this.ocrBusy) {
+                    this.setOcrStatus("OCR処理中です。完了までお待ちください。", "warn");
+                    return;
+                }
+
+                this.ocrBusy = true;
+                const outputArea = document.getElementById("ocrRawText");
+                const chunks = [];
+                this.setOcrStatus(`OCR開始: ${files.length} 枚`, "info");
+
+                try {
+                    for (let i = 0; i < files.length; i += 1) {
+                        const file = files[i];
+                        this.setOcrStatus(`OCR処理中 (${i + 1}/${files.length}): ${file.name}`, "info");
+                        const result = await Tesseract.recognize(file, "jpn+eng", {
+                            logger: (message) => {
+                                if (message.status === "recognizing text" && Number.isFinite(message.progress)) {
+                                    const percent = Math.round(message.progress * 100);
+                                    this.setOcrStatus(`OCR処理中 (${i + 1}/${files.length}) ${percent}%`, "info");
+                                }
+                            }
+                        });
+                        const text = String(result?.data?.text || "").trim();
+                        if (text) {
+                            chunks.push(`# OCR(${i + 1}): ${file.name}\n${text}`);
+                        }
+                    }
+
+                    const mergedText = chunks.join("\n\n");
+                    this.ocrLastText = mergedText;
+                    outputArea.value = mergedText;
+                    this.setOcrStatus(`OCR完了: ${files.length} 枚を解析しました`, "success");
+                    this.parseAndMatchOcrText();
+                } catch (error) {
+                    this.setOcrStatus("OCR処理に失敗しました。画像品質または形式を確認してください。", "error");
+                } finally {
+                    this.ocrBusy = false;
+                }
+            }
+
+            clearDetectedItems() {
+                this.detectedIngestionItems = [];
+                document.getElementById("ocrRawText").value = "";
+                document.getElementById("ocrImageInput").value = "";
+                this.renderDetectedDrugTable();
+                this.setOcrStatus("抽出結果をクリアしました。", "info");
+            }
+
+            renderDetectedDrugTable() {
+                const table = document.getElementById("detectedDrugTable");
+                if (!table) return;
+                if (this.detectedIngestionItems.length === 0) {
+                    table.innerHTML = `<p class="text-slate-400">解析すると薬剤候補がここに表示されます</p>`;
+                    return;
+                }
+
+                const rows = this.detectedIngestionItems.map((item, index) => {
+                    const strengthText = Number.isFinite(item.strengthPerTabletMg) ? `${item.strengthPerTabletMg.toFixed(2)} mg/錠` : "不明";
+                    const totalText = Number.isFinite(item.totalAmountMg) ? `${item.totalAmountMg.toFixed(1)} mg` : "不明";
+                    return `
+                        <tr class="border-t">
+                            <td class="p-2 align-top">${index + 1}</td>
+                            <td class="p-2 align-top">${this.escapeHTML(item.detectedName)}</td>
+                            <td class="p-2 align-top">${this.escapeHTML(item.resolvedName)}</td>
+                            <td class="p-2 align-top">${this.escapeHTML(strengthText)}</td>
+                            <td class="p-2 align-top">${this.escapeHTML(String(item.tabletCount))} 錠</td>
+                            <td class="p-2 align-top font-semibold">${this.escapeHTML(totalText)}</td>
+                            <td class="p-2 align-top text-xs">${this.escapeHTML(item.matchType)} / ${this.escapeHTML(String(item.confidence))}</td>
+                        </tr>
+                    `;
+                }).join("");
+
+                table.innerHTML = `
+                    <div class="overflow-x-auto border border-slate-200 rounded">
+                        <table class="w-full text-xs md:text-sm">
+                            <thead class="bg-slate-50">
+                                <tr>
+                                    <th class="p-2 text-left">#</th>
+                                    <th class="p-2 text-left">抽出名</th>
+                                    <th class="p-2 text-left">照合結果</th>
+                                    <th class="p-2 text-left">1錠量</th>
+                                    <th class="p-2 text-left">錠数</th>
+                                    <th class="p-2 text-left">総量</th>
+                                    <th class="p-2 text-left">照合信頼</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                `;
+            }
+
+            importDetectedItemsToAssessment() {
+                if (this.detectedIngestionItems.length === 0) {
+                    this.setOcrStatus("先にOCR解析またはテキスト解析を実行してください。", "warn");
+                    return;
+                }
+                const ingestionContext = this.buildIngestionContextFromInputs({ showAlert: true });
+                if (!ingestionContext) return;
+
+                let imported = 0;
+                this.detectedIngestionItems.forEach((item) => {
+                    if (!Number.isFinite(item.totalAmountMg) || item.totalAmountMg <= 0) return;
+                    this.addDrugCore(item.resolvedName, item.totalAmountMg, ingestionContext, {
+                        sourceMode: "photo_ocr",
+                        sourceLine: item.sourceLine
+                    });
+                    imported += 1;
+                });
+
+                if (imported === 0) {
+                    this.setOcrStatus("総量計算できる薬剤がありませんでした。規格(mg)と錠数の記載を確認してください。", "warn");
+                    return;
+                }
+
+                this.entries.sort((a, b) => b.riskScore - a.riskScore);
+                this.render();
+                this.setOcrStatus(`診療評価へ ${imported} 件反映しました。`, "success");
+            }
+
             parseAmountToken(amountText) {
                 const normalized = String(amountText || "")
                     .replaceAll("％", "%")
@@ -988,50 +1351,21 @@
                     ...Object.keys(this.ingredientDB)
                 ].sort((a, b) => a.localeCompare(b, "ja"));
                 datalist.innerHTML = candidates.map((name) => `<option value="${this.escapeHTML(name)}"></option>`).join("");
+                this.buildSearchEntries();
             }
 
-            addDrug() {
-                const drugInput = document.getElementById("drugInput");
-                const amountInput = document.getElementById("amountInput");
-                const patientWeight = Number(document.getElementById("patientWeight").value);
-                const elapsedMin = Number(document.getElementById("elapsedMinutes").value);
-                const airwaySecured = document.getElementById("airwaySecured").checked;
-                const observedSymptoms = this.parseSymptoms(document.getElementById("observedSymptoms").value);
-
-                const drugName = drugInput.value.trim();
-                const amountMg = Number(amountInput.value);
-
-                if (!drugName || !Number.isFinite(amountMg) || amountMg <= 0) {
-                    alert("薬剤名と内服量を正しく入力してください。");
-                    return;
-                }
-                if (!Number.isFinite(patientWeight) || patientWeight <= 0) {
-                    alert("体重(kg)を正しく入力してください。");
-                    return;
-                }
-                if (!Number.isFinite(elapsedMin) || elapsedMin < 0) {
-                    alert("摂取からの時間(分)を0以上で入力してください。");
-                    return;
-                }
-
-                const ingestionContext = {
-                    patientWeight,
-                    elapsedMin,
-                    airwaySecured,
-                    observedSymptoms
-                };
-
+            addDrugCore(drugName, amountMg, ingestionContext, meta = {}) {
                 const resolved = this.resolveDrugToIngredients(drugName, amountMg);
                 resolved.ingredients.forEach((ingredientItem) => {
                     const amountForIngredient = amountMg * ingredientItem.ratio;
                     const ingredientInfo = this.getIngredientInfo(ingredientItem.ingredient);
                     const jpicProfile = this.getJpicProfile(ingredientInfo, ingredientItem.ingredient);
-                    const doseMgKg = amountForIngredient / patientWeight;
+                    const doseMgKg = amountForIngredient / ingestionContext.patientWeight;
                     const severity = this.classifySeverity(doseMgKg, ingredientInfo);
                     const predictedSymptoms = ingredientInfo.symptoms || [];
-                    const matchedSymptoms = this.matchSymptoms(predictedSymptoms, observedSymptoms);
+                    const matchedSymptoms = this.matchSymptoms(predictedSymptoms, ingestionContext.observedSymptoms);
                     const toxicRatio = ingredientInfo.toxicDoseMgKg ? (doseMgKg / ingredientInfo.toxicDoseMgKg) : null;
-                    const timelineAssessment = this.assessTimeline(jpicProfile, elapsedMin, observedSymptoms);
+                    const timelineAssessment = this.assessTimeline(jpicProfile, ingestionContext.elapsedMin, ingestionContext.observedSymptoms);
 
                     const treatment = this.evaluateTreatments({
                         ingredientInfo,
@@ -1067,10 +1401,27 @@
                         timelineAssessment,
                         treatment,
                         riskScore,
-                        unknown: ingredientInfo.unknown
+                        unknown: ingredientInfo.unknown,
+                        sourceMode: meta.sourceMode || "manual",
+                        sourceLine: meta.sourceLine || ""
                     });
                 });
+            }
 
+            addDrug() {
+                const drugInput = document.getElementById("drugInput");
+                const amountInput = document.getElementById("amountInput");
+                const drugName = drugInput.value.trim();
+                const amountMg = Number(amountInput.value);
+
+                if (!drugName || !Number.isFinite(amountMg) || amountMg <= 0) {
+                    alert("薬剤名と内服量を正しく入力してください。");
+                    return;
+                }
+                const ingestionContext = this.buildIngestionContextFromInputs({ showAlert: true });
+                if (!ingestionContext) return;
+
+                this.addDrugCore(drugName, amountMg, ingestionContext, { sourceMode: "manual" });
                 this.entries.sort((a, b) => b.riskScore - a.riskScore);
                 this.render();
 
@@ -1318,7 +1669,9 @@
                     const matchedText = entry.matchedSymptoms.length > 0 ? entry.matchedSymptoms.join(", ") : "一致なし";
                     const unmatchedText = predictedWithoutMatch.length > 0 ? predictedWithoutMatch.join(", ") : "主要症状は概ね一致";
                     const toxicDoseText = entry.unknown ? "不明" : `${entry.toxicRatio ? this.formatNumber(entry.toxicRatio, 2) : "0.00"} x 中毒量`;
-                    const sourceLabel = entry.sourceDrug === entry.ingredient ? "成分直入力" : `製剤: ${entry.sourceDrug}`;
+                    const sourceLabel = entry.sourceMode === "photo_ocr"
+                        ? `写真OCR: ${entry.sourceDrug}`
+                        : (entry.sourceDrug === entry.ingredient ? "成分直入力" : `製剤: ${entry.sourceDrug}`);
                     const thresholdText = this.formatThresholdSummary(entry.jpicProfile?.toxicThresholdMgKg || {});
                     const timelinePhaseText = entry.timelineAssessment?.phase || "不明";
                     const timelineRedFlags = (entry.timelineAssessment?.redFlags || []).join(", ") || "なし";
