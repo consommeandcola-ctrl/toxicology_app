@@ -1696,6 +1696,159 @@
                 return { addedProducts, addedIngredients, updatedStrengthHints };
             }
 
+            parseNumericOrNull(value) {
+                const num = Number(value);
+                return Number.isFinite(num) ? num : null;
+            }
+
+            toStringList(values) {
+                if (!Array.isArray(values)) return [];
+                return [...new Set(values.map((item) => String(item || "").trim()).filter(Boolean))];
+            }
+
+            mergeOcrKnowledgeProfiles(profiles) {
+                let loadedProfiles = 0;
+                let addedProducts = 0;
+                let addedIngredients = 0;
+                let addedSynonyms = 0;
+
+                (Array.isArray(profiles) ? profiles : []).forEach((profile) => {
+                    const ingredientName = String(profile.ingredient_name || "").trim();
+                    if (!ingredientName) return;
+                    loadedProfiles += 1;
+
+                    if (!this.ingredientDB[ingredientName]) {
+                        this.ingredientDB[ingredientName] = this.buildUnknownIngredientInfo(ingredientName);
+                        addedIngredients += 1;
+                    }
+
+                    const ingredient = this.ingredientDB[ingredientName];
+                    ingredient.unknown = false;
+                    ingredient.component = String(profile.component || ingredient.component || "Unknown");
+
+                    const symptoms = this.toStringList(profile.symptoms);
+                    if (symptoms.length > 0) ingredient.symptoms = symptoms;
+                    const criticalSymptoms = this.toStringList(profile.critical_symptoms);
+                    if (criticalSymptoms.length > 0) ingredient.criticalSymptoms = criticalSymptoms;
+
+                    const thresholds = profile.toxic_threshold_mg_kg || {};
+                    const toxic = this.parseNumericOrNull(thresholds.toxic);
+                    const severe = this.parseNumericOrNull(thresholds.severe);
+                    const critical = this.parseNumericOrNull(thresholds.critical);
+                    if (Number.isFinite(toxic)) ingredient.toxicDoseMgKg = toxic;
+                    if (Number.isFinite(severe)) ingredient.severeDoseMgKg = severe;
+                    if (Number.isFinite(critical)) ingredient.criticalDoseMgKg = critical;
+
+                    const treatment = profile.treatment || {};
+                    const antidote = treatment.antidote || {};
+                    ingredient.antidote = {
+                        name: String(antidote.name || ingredient.antidote?.name || "特異的解毒剤なし"),
+                        indication: String(antidote.indication || ingredient.antidote?.indication || "支持療法を優先")
+                    };
+
+                    const lavage = treatment.lavage || {};
+                    ingredient.lavage = {
+                        allow: Boolean(lavage.allow),
+                        windowMin: Number.isFinite(Number(lavage.window_min)) ? Number(lavage.window_min) : Number(ingredient.lavage?.windowMin || 0),
+                        note: String(lavage.note || ingredient.lavage?.note || "適応を個別判断")
+                    };
+
+                    const charcoal = treatment.charcoal || {};
+                    ingredient.charcoal = {
+                        allow: Boolean(charcoal.allow),
+                        windowMin: Number.isFinite(Number(charcoal.window_min)) ? Number(charcoal.window_min) : Number(ingredient.charcoal?.windowMin || 0),
+                        extendedWindowMin: Number.isFinite(Number(charcoal.extended_window_min))
+                            ? Number(charcoal.extended_window_min)
+                            : Number(ingredient.charcoal?.extendedWindowMin || 0),
+                        note: String(charcoal.note || ingredient.charcoal?.note || "適応を個別判断")
+                    };
+
+                    const dialysis = treatment.dialysis || {};
+                    ingredient.dialysis = {
+                        effective: Boolean(dialysis.effective),
+                        indication: String(dialysis.indication || ingredient.dialysis?.indication || "有効性情報を確認")
+                    };
+
+                    const otherTreatments = Array.isArray(treatment.other) ? treatment.other : [];
+                    if (otherTreatments.length > 0) {
+                        ingredient.otherTreatments = otherTreatments.map((item) => ({
+                            name: String(item.name || "支持療法"),
+                            severityMin: Number.isFinite(Number(item.severity_min)) ? Number(item.severity_min) : 1,
+                            note: String(item.note || "")
+                        }));
+                    }
+
+                    const timeline = Array.isArray(profile.symptom_timeline) ? profile.symptom_timeline : [];
+                    const normalizedTimeline = timeline.map((phase) => ({
+                        window: String(phase.window || "不明"),
+                        symptoms: this.toStringList(phase.symptoms),
+                        redFlags: this.toStringList(phase.red_flags)
+                    }));
+
+                    const toxicokinetics = profile.toxicokinetics || {};
+                    const analysis = profile.analysis || {};
+                    const evidence = profile.evidence || {};
+                    const treatmentGuide = {
+                        decontamination: [
+                            ingredient.lavage.allow ? `胃洗浄(${ingredient.lavage.windowMin}分以内)` : "胃洗浄は原則非推奨",
+                            ingredient.charcoal.allow ? `活性炭(${ingredient.charcoal.windowMin}分以内)` : "活性炭は原則非推奨"
+                        ].join(" / "),
+                        antidote: ingredient.antidote.name,
+                        extracorporeal: ingredient.dialysis.effective ? "血液浄化を検討" : "血液浄化は通常適応外",
+                        other: this.toStringList((treatment.other || []).map((item) => item.name)).join(", ") || "支持療法"
+                    };
+
+                    ingredient.jpic = this.normalizeJpicProfile({
+                        ingredientName,
+                        aliases: this.toStringList(profile.aliases),
+                        toxicThresholdMgKg: {
+                            caution: this.parseNumericOrNull(thresholds.caution),
+                            toxic: this.parseNumericOrNull(thresholds.toxic),
+                            severe: this.parseNumericOrNull(thresholds.severe),
+                            critical: this.parseNumericOrNull(thresholds.critical)
+                        },
+                        symptomTimeline: normalizedTimeline,
+                        toxicokinetics: {
+                            tmaxHours: String(toxicokinetics.tmaxHours || "情報不足"),
+                            halfLifeHours: String(toxicokinetics.halfLifeHours || "情報不足"),
+                            vdLKg: String(toxicokinetics.vdLKg || "情報不足"),
+                            proteinBindingPct: String(toxicokinetics.proteinBindingPct || "情報不足"),
+                            metabolism: String(toxicokinetics.metabolism || "情報不足"),
+                            elimination: String(toxicokinetics.elimination || "情報不足")
+                        },
+                        treatmentGuide,
+                        analysis: {
+                            recommendedTests: this.toStringList(analysis.recommended_tests),
+                            interpretation: String(analysis.interpretation || "症候と曝露量から総合判断"),
+                            notes: String(analysis.notes || "")
+                        },
+                        evidence: {
+                            source: String(evidence.source || "ocr_result_1770368005162.txt"),
+                            updatedAt: String(evidence.updated_at || "不明"),
+                            level: String(evidence.level || "ocr-reference")
+                        }
+                    }, ingredientName);
+
+                    this.toStringList(profile.aliases).forEach((alias) => {
+                        if (alias === ingredientName) return;
+                        if (!this.ingredientSynonyms[alias]) {
+                            this.ingredientSynonyms[alias] = ingredientName;
+                            addedSynonyms += 1;
+                        }
+                        this.ingredientSynonymIndex[this.normalizeName(alias)] = ingredientName;
+                    });
+
+                    this.toStringList(profile.product_aliases).forEach((productName) => {
+                        if (!this.productDB[productName]) {
+                            this.productDB[productName] = [{ ingredient: ingredientName, ratio: 1 }];
+                            addedProducts += 1;
+                        }
+                    });
+                });
+
+                return { loadedProfiles, addedProducts, addedIngredients, addedSynonyms };
+            }
+
             async loadDatasetFile(path, label) {
                 const response = await fetch(path, { cache: "no-store" });
                 if (!response.ok) throw new Error(`${label}: HTTP ${response.status}`);
@@ -1709,6 +1862,21 @@
                     addedProducts: merged.addedProducts,
                     addedIngredients: merged.addedIngredients,
                     updatedStrengthHints: merged.updatedStrengthHints
+                };
+            }
+
+            async loadOcrKnowledgeFile(path, label) {
+                const response = await fetch(path, { cache: "no-store" });
+                if (!response.ok) throw new Error(`${label}: HTTP ${response.status}`);
+                const payload = await response.json();
+                const profiles = Array.isArray(payload.profiles) ? payload.profiles : [];
+                const merged = this.mergeOcrKnowledgeProfiles(profiles);
+                return {
+                    label,
+                    loadedProfiles: merged.loadedProfiles,
+                    addedProducts: merged.addedProducts,
+                    addedIngredients: merged.addedIngredients,
+                    addedSynonyms: merged.addedSynonyms
                 };
             }
 
@@ -1728,6 +1896,12 @@
                     // 読み込み失敗時は内蔵データのみで継続
                 }
 
+                try {
+                    loaded.push(await this.loadOcrKnowledgeFile("data/ocr_household_knowledge.json", "OCR-家庭用品知識"));
+                } catch (error) {
+                    // OCR知識ファイル未配置でも動作継続
+                }
+
                 this.populateDrugCandidates();
                 this.datasetLoaded = loaded.length > 0;
 
@@ -1739,9 +1913,11 @@
                 const totalAddedProducts = loaded.reduce((sum, item) => sum + item.addedProducts, 0);
                 const totalAddedIngredients = loaded.reduce((sum, item) => sum + item.addedIngredients, 0);
                 const totalStrengthHints = loaded.reduce((sum, item) => sum + (item.updatedStrengthHints || 0), 0);
+                const totalKnowledgeProfiles = loaded.reduce((sum, item) => sum + (item.loadedProfiles || 0), 0);
+                const totalAddedSynonyms = loaded.reduce((sum, item) => sum + (item.addedSynonyms || 0), 0);
                 const sourceLabel = loaded.map((item) => item.label).join(" / ");
                 this.setDatasetStatus(
-                    `${sourceLabel} 読込完了: 製品 +${totalAddedProducts} 件 / 新規成分 +${totalAddedIngredients} 件 / 規格ヒント +${totalStrengthHints} 件`,
+                    `${sourceLabel} 読込完了: 製品 +${totalAddedProducts} 件 / 新規成分 +${totalAddedIngredients} 件 / 規格ヒント +${totalStrengthHints} 件 / OCR知識 ${totalKnowledgeProfiles} 件 / 同義語 +${totalAddedSynonyms} 件`,
                     "success"
                 );
                 this.tryAutoFillStrength();

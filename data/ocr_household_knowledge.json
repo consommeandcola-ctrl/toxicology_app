@@ -1,0 +1,550 @@
+{
+  "metadata": {
+    "source_file": "uploads/ocr_result_1770368005162.txt",
+    "compiled_at": "2026-02-13T00:00:00+09:00",
+    "description": "OCR抽出資料から作成した家庭用品中毒の構造化知識（初期版）",
+    "entry_count": 4
+  },
+  "profiles": [
+    {
+      "ingredient_name": "陽イオン界面活性剤",
+      "component": "Cationic surfactant",
+      "aliases": [
+        "benzalkonium chloride",
+        "benzalconium chloride",
+        "cetylpyridinium chloride",
+        "cetyltrimethylammonium bromide",
+        "塩化ベンザルコニウム",
+        "塩化セチルピリジニウム"
+      ],
+      "product_aliases": [
+        "柔軟仕上げ剤",
+        "ヘアリンス",
+        "住居用洗剤"
+      ],
+      "toxic_threshold_mg_kg": {
+        "caution": 5,
+        "toxic": 10,
+        "severe": 20,
+        "critical": 40
+      },
+      "symptoms": [
+        "口腔咽頭粘膜刺激",
+        "腹痛",
+        "下痢",
+        "悪心",
+        "嘔吐",
+        "消化管出血",
+        "麻痺性イレウス",
+        "血圧低下",
+        "末梢血管抵抗低下",
+        "溶血",
+        "アシドーシス"
+      ],
+      "critical_symptoms": [
+        "ショック",
+        "重度低血圧",
+        "低酸素血症",
+        "意識障害"
+      ],
+      "symptom_timeline": [
+        {
+          "window": "0-2時間",
+          "symptoms": [
+            "口腔咽頭刺激",
+            "悪心",
+            "嘔吐",
+            "腹痛"
+          ],
+          "red_flags": [
+            "反復嘔吐",
+            "血圧低下"
+          ]
+        },
+        {
+          "window": "2-8時間",
+          "symptoms": [
+            "下痢",
+            "消化管出血",
+            "循環血液量低下"
+          ],
+          "red_flags": [
+            "ショック",
+            "意識障害"
+          ]
+        },
+        {
+          "window": "8時間以降",
+          "symptoms": [
+            "肺胞虚脱",
+            "低酸素血症",
+            "循環不全"
+          ],
+          "red_flags": [
+            "低拍出量症候群",
+            "難治性低血圧"
+          ]
+        }
+      ],
+      "toxicokinetics": {
+        "tmaxHours": "情報不足",
+        "halfLifeHours": "情報不足",
+        "vdLKg": "情報不足",
+        "proteinBindingPct": "情報不足",
+        "metabolism": "細胞膜障害主体",
+        "elimination": "情報不足"
+      },
+      "treatment": {
+        "antidote": {
+          "name": "特異的解毒剤なし",
+          "indication": "支持療法と循環・呼吸管理を優先"
+        },
+        "lavage": {
+          "allow": true,
+          "window_min": 120,
+          "note": "大量服毒では胃洗浄を検討（資料記載: 生理食塩水10L以上で洗浄）"
+        },
+        "charcoal": {
+          "allow": true,
+          "window_min": 120,
+          "extended_window_min": 240,
+          "note": "胃内容排出後に粉末活性炭を投与検討"
+        },
+        "dialysis": {
+          "effective": false,
+          "indication": "一次資料で有効性情報が乏しい"
+        },
+        "other": [
+          {
+            "name": "循環動態モニタリング",
+            "severity_min": 3,
+            "note": "低容量性ショックに備え十分な輸液を行う"
+          },
+          {
+            "name": "呼吸管理(PEEP主体)",
+            "severity_min": 3,
+            "note": "肺胞虚脱による低酸素血症を是正する"
+          }
+        ]
+      },
+      "analysis": {
+        "recommended_tests": [
+          "血液ガス",
+          "乳酸",
+          "電解質",
+          "腎機能",
+          "循環モニタ"
+        ],
+        "interpretation": "ショック徴候と酸塩基異常を重視して重症度を判断する",
+        "notes": "多剤大量服毒の合併を前提に詳細な聴取が必要"
+      },
+      "evidence": {
+        "source": "ocr_result_1770368005162.txt",
+        "pages": [
+          303,
+          304
+        ],
+        "updated_at": "2026-02-13",
+        "level": "ocr-reference"
+      }
+    },
+    {
+      "ingredient_name": "義歯洗浄剤",
+      "component": "Denture cleaner",
+      "aliases": [
+        "Denture cleaner",
+        "過ホウ酸ナトリウム含有義歯洗浄剤",
+        "過炭酸ナトリウム含有義歯洗浄剤"
+      ],
+      "product_aliases": [
+        "ポリデント",
+        "タフデント",
+        "ステラデント",
+        "エファデント"
+      ],
+      "toxic_threshold_mg_kg": {
+        "caution": 250,
+        "toxic": 500,
+        "severe": 1000,
+        "critical": 2000
+      },
+      "symptoms": [
+        "口唇舌口腔内の発赤",
+        "灼熱痛",
+        "悪心",
+        "嘔吐",
+        "腹痛",
+        "下痢",
+        "腹部膨満感",
+        "高ナトリウム血症",
+        "低カリウム血症",
+        "代謝性アルカローシス",
+        "低カルシウム血症"
+      ],
+      "critical_symptoms": [
+        "呼吸困難",
+        "乏尿",
+        "重度電解質異常",
+        "意識障害"
+      ],
+      "symptom_timeline": [
+        {
+          "window": "0-2時間",
+          "symptoms": [
+            "口腔粘膜刺激",
+            "悪心",
+            "嘔吐"
+          ],
+          "red_flags": [
+            "舌腫大",
+            "呼吸苦"
+          ]
+        },
+        {
+          "window": "2-12時間",
+          "symptoms": [
+            "腹痛",
+            "下痢",
+            "腹部膨満感"
+          ],
+          "red_flags": [
+            "乏尿",
+            "電解質異常"
+          ]
+        },
+        {
+          "window": "12時間以降",
+          "symptoms": [
+            "肝腎機能障害",
+            "呼吸症状遷延"
+          ],
+          "red_flags": [
+            "呼吸不全",
+            "重篤な酸塩基異常"
+          ]
+        }
+      ],
+      "toxicokinetics": {
+        "tmaxHours": "情報不足",
+        "halfLifeHours": "情報不足",
+        "vdLKg": "情報不足",
+        "proteinBindingPct": "情報不足",
+        "metabolism": "炭酸水素ナトリウムは胃酸と反応しCO2発生",
+        "elimination": "炭酸水素ナトリウムは腎排泄"
+      },
+      "treatment": {
+        "antidote": {
+          "name": "特異的解毒剤なし",
+          "indication": "少量摂取は希釈と経過観察、大量摂取は除染と支持療法"
+        },
+        "lavage": {
+          "allow": true,
+          "window_min": 120,
+          "note": "大量摂取では製品液性を確認して胃洗浄を検討"
+        },
+        "charcoal": {
+          "allow": true,
+          "window_min": 120,
+          "extended_window_min": 240,
+          "note": "大量摂取例で活性炭を検討"
+        },
+        "dialysis": {
+          "effective": true,
+          "indication": "過ホウ酸ナトリウム大量摂取では血液透析を考慮"
+        },
+        "other": [
+          {
+            "name": "牛乳または水で希釈",
+            "severity_min": 1,
+            "note": "少量摂取時の粘膜保護として実施"
+          },
+          {
+            "name": "電解質補正",
+            "severity_min": 2,
+            "note": "高Na・低K・代謝性アルカローシスを連続評価"
+          }
+        ]
+      },
+      "analysis": {
+        "recommended_tests": [
+          "血液ガス",
+          "電解質",
+          "腎機能",
+          "肝機能",
+          "咽頭喉頭観察"
+        ],
+        "interpretation": "呼吸症状と電解質異常の進行有無で重症化を判断する",
+        "notes": "強アルカリ性製品では腐食性障害の評価を優先する"
+      },
+      "evidence": {
+        "source": "ocr_result_1770368005162.txt",
+        "pages": [
+          305,
+          306
+        ],
+        "updated_at": "2026-02-13",
+        "level": "ocr-reference"
+      }
+    },
+    {
+      "ingredient_name": "次亜塩素酸ナトリウム",
+      "component": "Sodium hypochlorite",
+      "aliases": [
+        "Hypochlorite",
+        "塩素系漂白剤"
+      ],
+      "product_aliases": [
+        "キッチンハイター",
+        "ブライト",
+        "カネヨブリーチ",
+        "カビキラー"
+      ],
+      "toxic_threshold_mg_kg": {
+        "caution": null,
+        "toxic": null,
+        "severe": null,
+        "critical": null
+      },
+      "symptoms": [
+        "口腔咽頭食道粘膜障害",
+        "灼熱感",
+        "疼痛",
+        "悪心",
+        "嘔吐",
+        "皮膚炎",
+        "チアノーゼ",
+        "血圧低下"
+      ],
+      "critical_symptoms": [
+        "気道刺激",
+        "肺浮腫",
+        "意識障害",
+        "重度アシドーシス"
+      ],
+      "symptom_timeline": [
+        {
+          "window": "0-2時間",
+          "symptoms": [
+            "咽頭刺激",
+            "悪心",
+            "嘔吐"
+          ],
+          "red_flags": [
+            "呼吸苦",
+            "血圧低下"
+          ]
+        },
+        {
+          "window": "2-12時間",
+          "symptoms": [
+            "粘膜障害進行",
+            "疼痛遷延"
+          ],
+          "red_flags": [
+            "チアノーゼ",
+            "呼吸不全"
+          ]
+        },
+        {
+          "window": "12時間以降",
+          "symptoms": [
+            "肺水腫",
+            "遅発性気道障害"
+          ],
+          "red_flags": [
+            "低酸素血症",
+            "代謝性アシドーシス"
+          ]
+        }
+      ],
+      "toxicokinetics": {
+        "tmaxHours": "情報不足",
+        "halfLifeHours": "情報不足",
+        "vdLKg": "情報不足",
+        "proteinBindingPct": "情報不足",
+        "metabolism": "胃酸と反応し塩素・次亜塩素酸を遊離",
+        "elimination": "蛋白により不活化されやすい"
+      },
+      "treatment": {
+        "antidote": {
+          "name": "特異的解毒剤なし",
+          "indication": "蛋白による不活化（牛乳・卵白）と粘膜保護を優先"
+        },
+        "lavage": {
+          "allow": true,
+          "window_min": 120,
+          "note": "大量摂取時に限定し、酸性液による洗浄は避ける"
+        },
+        "charcoal": {
+          "allow": true,
+          "window_min": 120,
+          "extended_window_min": 180,
+          "note": "重症例で補助的に検討"
+        },
+        "dialysis": {
+          "effective": false,
+          "indication": "通常は適応外"
+        },
+        "other": [
+          {
+            "name": "牛乳・卵白投与",
+            "severity_min": 1,
+            "note": "次亜塩素酸を不活化し粘膜保護を図る"
+          },
+          {
+            "name": "酸性飲料の回避",
+            "severity_min": 1,
+            "note": "塩素ガス発生による気道障害増悪を防ぐ"
+          }
+        ]
+      },
+      "analysis": {
+        "recommended_tests": [
+          "血液ガス",
+          "胸部画像",
+          "電解質",
+          "粘膜障害評価"
+        ],
+        "interpretation": "気道障害と低酸素の進展を中心に重症度判定する",
+        "notes": "混合曝露（酸性洗剤併用）では塩素ガス吸入評価を追加する"
+      },
+      "evidence": {
+        "source": "ocr_result_1770368005162.txt",
+        "pages": [
+          307,
+          308
+        ],
+        "updated_at": "2026-02-13",
+        "level": "ocr-reference"
+      }
+    },
+    {
+      "ingredient_name": "ベビーパウダー",
+      "component": "Talc / Zinc oxide",
+      "aliases": [
+        "Baby Powder",
+        "タルク",
+        "酸化亜鉛含有ベビーパウダー"
+      ],
+      "product_aliases": [
+        "シッカロール",
+        "薬用シッカロール"
+      ],
+      "toxic_threshold_mg_kg": {
+        "caution": 100,
+        "toxic": 500,
+        "severe": 1000,
+        "critical": 2000
+      },
+      "symptoms": [
+        "くしゃみ",
+        "過呼吸",
+        "陥没呼吸",
+        "喘鳴",
+        "チアノーゼ",
+        "気管支炎",
+        "悪心",
+        "嘔吐"
+      ],
+      "critical_symptoms": [
+        "呼吸困難",
+        "低酸素血症",
+        "気道閉塞"
+      ],
+      "symptom_timeline": [
+        {
+          "window": "0-2時間",
+          "symptoms": [
+            "咳嗽",
+            "喘鳴",
+            "呼吸促進"
+          ],
+          "red_flags": [
+            "チアノーゼ",
+            "呼吸困難"
+          ]
+        },
+        {
+          "window": "2-12時間",
+          "symptoms": [
+            "気道分泌増加",
+            "呼吸音粗雑"
+          ],
+          "red_flags": [
+            "低酸素血症遷延",
+            "挿管必要"
+          ]
+        },
+        {
+          "window": "12時間以降",
+          "symptoms": [
+            "気道炎症遷延"
+          ],
+          "red_flags": [
+            "呼吸不全"
+          ]
+        }
+      ],
+      "toxicokinetics": {
+        "tmaxHours": "情報不足",
+        "halfLifeHours": "情報不足",
+        "vdLKg": "情報不足",
+        "proteinBindingPct": "情報不足",
+        "metabolism": "タルクは吸入時に気道末梢へ沈着",
+        "elimination": "タルクは便中排泄（数日）"
+      },
+      "treatment": {
+        "antidote": {
+          "name": "特異的解毒剤なし",
+          "indication": "吸入時は気道吸引と呼吸管理を優先"
+        },
+        "lavage": {
+          "allow": false,
+          "window_min": 0,
+          "note": "誤食少量は通常処置不要、薬用製品大量誤食時のみ個別判断"
+        },
+        "charcoal": {
+          "allow": false,
+          "window_min": 0,
+          "extended_window_min": 0,
+          "note": "吸入障害主体のため通常は適応外"
+        },
+        "dialysis": {
+          "effective": false,
+          "indication": "通常は適応外"
+        },
+        "other": [
+          {
+            "name": "気道吸引・挿管",
+            "severity_min": 3,
+            "note": "大量吸入時は積極的に除去する"
+          },
+          {
+            "name": "肺洗浄回避",
+            "severity_min": 2,
+            "note": "不溶性粉体を末梢へ押し込むため禁忌とされる"
+          }
+        ]
+      },
+      "analysis": {
+        "recommended_tests": [
+          "SpO2",
+          "呼吸状態評価",
+          "胸部画像",
+          "血液ガス"
+        ],
+        "interpretation": "吸入曝露の有無と呼吸不全進展の監視が最重要",
+        "notes": "薬用製品では酸化亜鉛による消化器症状にも注意"
+      },
+      "evidence": {
+        "source": "ocr_result_1770368005162.txt",
+        "pages": [
+          309,
+          310
+        ],
+        "updated_at": "2026-02-13",
+        "level": "ocr-reference"
+      }
+    }
+  ]
+}
