@@ -74,3 +74,20 @@
 ## データセット
 
 データ収集スクリプトやPMDA由来データの詳細は `DATASET.md` を参照してください。
+
+## OCR由来の家庭用品中毒知識（初期版）
+
+`uploads/ocr_result_1770368005162.txt` の内容を、アプリで扱える構造化データに変換して利用します。
+
+- ファイル: `data/ocr_household_knowledge.json`
+- 生成スクリプト: `scripts/build_ocr_household_knowledge.py`
+- 収載カテゴリ（初期）:
+  - OCRファイル内の危険度見出しから自動抽出した収載項目（現状 82 項目）
+- 反映先:
+  - 成分DB (`ingredientDB`)
+  - 製品名別名 (`productDB`)
+  - JPIC互換プロファイル (`jpic`)
+
+注意:
+- OCR由来データは誤字や文脈欠落を含む可能性があるため、`evidence.level = ocr-reference` として保持しています。
+- 臨床適用時は一次情報で必ず再確認してください。
