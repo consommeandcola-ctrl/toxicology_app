@@ -16,6 +16,9 @@
 ```bash
 python3 scripts/fetch_pmda_otc_dataset.py --max-products 1500 --sleep-sec 0.02 --output-dir data
 python3 scripts/fetch_pmda_iyaku_dataset.py --from-date 20100101 --to-date 20260213 --output-dir data
+python3 scripts/build_ocr_household_knowledge.py \
+  --input "/home/ubuntu/.cursor/projects/workspace/uploads/ocr_result_1770368005162.txt" \
+  --output data/ocr_household_knowledge.json
 ```
 
 ## 出力ファイル
@@ -36,7 +39,7 @@ python3 scripts/fetch_pmda_iyaku_dataset.py --from-date 20100101 --to-date 20260
 - `data/jpic_compatible_schema.json`
   - アプリ内で使用するJPIC互換スキーマ定義
 - `data/ocr_household_knowledge.json`
-  - `uploads/ocr_result_1770368005162.txt` を基にした家庭用品中毒知識の構造化データ
+  - `uploads/ocr_result_1770368005162.txt` を基にした家庭用品中毒知識の構造化データ（自動抽出）
   - 成分別の症状、処置、推奨検査、製品別名、根拠ページ情報を格納
 
 ## 収集ロジック概要
@@ -72,6 +75,7 @@ python3 scripts/fetch_pmda_iyaku_dataset.py --from-date 20100101 --to-date 20260
   - `ingredientDB` に中毒知識を上書き/追加
   - `productDB` に製品別名を追加（例: キッチンハイター → 次亜塩素酸ナトリウム）
   - `ingredientSynonyms` に英名・別名を追加
+  - 既存の高品質成分データ（既知成分）は保持し、OCRデータは主に新規/未知成分へ適用
 
 ## 注意
 

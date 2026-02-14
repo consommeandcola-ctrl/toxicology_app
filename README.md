@@ -80,11 +80,9 @@
 `uploads/ocr_result_1770368005162.txt` の内容を、アプリで扱える構造化データに変換して利用します。
 
 - ファイル: `data/ocr_household_knowledge.json`
+- 生成スクリプト: `scripts/build_ocr_household_knowledge.py`
 - 収載カテゴリ（初期）:
-  - 陽イオン界面活性剤
-  - 義歯洗浄剤
-  - 次亜塩素酸ナトリウム
-  - ベビーパウダー
+  - OCRファイル内の危険度見出しから自動抽出した収載項目（現状 82 項目）
 - 反映先:
   - 成分DB (`ingredientDB`)
   - 製品名別名 (`productDB`)

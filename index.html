@@ -1707,6 +1707,24 @@
                 return [...new Set(values.map((item) => String(item || "").trim()).filter(Boolean))];
             }
 
+            isUsefulOcrAlias(alias) {
+                const value = String(alias || "").trim();
+                if (!value || value.length < 2 || value.length > 80) return false;
+                if (value.includes("危険度")) return false;
+                if (/^[\(\)\[\]{}\-_=+*~.。、,:;'"`!?！？0-9A-Za-z]+$/.test(value) && value.length < 4) return false;
+                if (!/[A-Za-z一-龥ぁ-んァ-ヶ]/.test(value)) return false;
+                return true;
+            }
+
+            isUsefulOcrProductAlias(name) {
+                const value = String(name || "").trim();
+                if (!value || value.length < 2 || value.length > 40) return false;
+                if (!/[A-Za-z一-龥ぁ-んァ-ヶ]/.test(value)) return false;
+                const blocked = ["危険度", "ファイルシート", "中毒", "体内動態", "処置法", "治療", "ポイント", "特記事項", "文献", "強アルカリ性", "中性"];
+                if (blocked.some((word) => value.includes(word))) return false;
+                return true;
+            }
+
             mergeOcrKnowledgeProfiles(profiles) {
                 let loadedProfiles = 0;
                 let addedProducts = 0;
@@ -1718,60 +1736,72 @@
                     if (!ingredientName) return;
                     loadedProfiles += 1;
 
-                    if (!this.ingredientDB[ingredientName]) {
+                    const existedBefore = Boolean(this.ingredientDB[ingredientName]);
+                    if (!existedBefore) {
                         this.ingredientDB[ingredientName] = this.buildUnknownIngredientInfo(ingredientName);
                         addedIngredients += 1;
                     }
 
                     const ingredient = this.ingredientDB[ingredientName];
-                    ingredient.unknown = false;
-                    ingredient.component = String(profile.component || ingredient.component || "Unknown");
+                    const allowOverwrite = !existedBefore || ingredient.unknown;
+                    if (allowOverwrite) {
+                        ingredient.unknown = false;
+                        ingredient.component = String(profile.component || ingredient.component || "Unknown");
+                    }
 
                     const symptoms = this.toStringList(profile.symptoms);
-                    if (symptoms.length > 0) ingredient.symptoms = symptoms;
+                    if (allowOverwrite && symptoms.length > 0) ingredient.symptoms = symptoms;
                     const criticalSymptoms = this.toStringList(profile.critical_symptoms);
-                    if (criticalSymptoms.length > 0) ingredient.criticalSymptoms = criticalSymptoms;
+                    if (allowOverwrite && criticalSymptoms.length > 0) ingredient.criticalSymptoms = criticalSymptoms;
 
                     const thresholds = profile.toxic_threshold_mg_kg || {};
                     const toxic = this.parseNumericOrNull(thresholds.toxic);
                     const severe = this.parseNumericOrNull(thresholds.severe);
                     const critical = this.parseNumericOrNull(thresholds.critical);
-                    if (Number.isFinite(toxic)) ingredient.toxicDoseMgKg = toxic;
-                    if (Number.isFinite(severe)) ingredient.severeDoseMgKg = severe;
-                    if (Number.isFinite(critical)) ingredient.criticalDoseMgKg = critical;
+                    if (allowOverwrite && Number.isFinite(toxic)) ingredient.toxicDoseMgKg = toxic;
+                    if (allowOverwrite && Number.isFinite(severe)) ingredient.severeDoseMgKg = severe;
+                    if (allowOverwrite && Number.isFinite(critical)) ingredient.criticalDoseMgKg = critical;
 
                     const treatment = profile.treatment || {};
                     const antidote = treatment.antidote || {};
-                    ingredient.antidote = {
-                        name: String(antidote.name || ingredient.antidote?.name || "特異的解毒剤なし"),
-                        indication: String(antidote.indication || ingredient.antidote?.indication || "支持療法を優先")
-                    };
+                    if (allowOverwrite) {
+                        ingredient.antidote = {
+                            name: String(antidote.name || ingredient.antidote?.name || "特異的解毒剤なし"),
+                            indication: String(antidote.indication || ingredient.antidote?.indication || "支持療法を優先")
+                        };
+                    }
 
                     const lavage = treatment.lavage || {};
-                    ingredient.lavage = {
-                        allow: Boolean(lavage.allow),
-                        windowMin: Number.isFinite(Number(lavage.window_min)) ? Number(lavage.window_min) : Number(ingredient.lavage?.windowMin || 0),
-                        note: String(lavage.note || ingredient.lavage?.note || "適応を個別判断")
-                    };
+                    if (allowOverwrite) {
+                        ingredient.lavage = {
+                            allow: Boolean(lavage.allow),
+                            windowMin: Number.isFinite(Number(lavage.window_min)) ? Number(lavage.window_min) : Number(ingredient.lavage?.windowMin || 0),
+                            note: String(lavage.note || ingredient.lavage?.note || "適応を個別判断")
+                        };
+                    }
 
                     const charcoal = treatment.charcoal || {};
-                    ingredient.charcoal = {
-                        allow: Boolean(charcoal.allow),
-                        windowMin: Number.isFinite(Number(charcoal.window_min)) ? Number(charcoal.window_min) : Number(ingredient.charcoal?.windowMin || 0),
-                        extendedWindowMin: Number.isFinite(Number(charcoal.extended_window_min))
-                            ? Number(charcoal.extended_window_min)
-                            : Number(ingredient.charcoal?.extendedWindowMin || 0),
-                        note: String(charcoal.note || ingredient.charcoal?.note || "適応を個別判断")
-                    };
+                    if (allowOverwrite) {
+                        ingredient.charcoal = {
+                            allow: Boolean(charcoal.allow),
+                            windowMin: Number.isFinite(Number(charcoal.window_min)) ? Number(charcoal.window_min) : Number(ingredient.charcoal?.windowMin || 0),
+                            extendedWindowMin: Number.isFinite(Number(charcoal.extended_window_min))
+                                ? Number(charcoal.extended_window_min)
+                                : Number(ingredient.charcoal?.extendedWindowMin || 0),
+                            note: String(charcoal.note || ingredient.charcoal?.note || "適応を個別判断")
+                        };
+                    }
 
                     const dialysis = treatment.dialysis || {};
-                    ingredient.dialysis = {
-                        effective: Boolean(dialysis.effective),
-                        indication: String(dialysis.indication || ingredient.dialysis?.indication || "有効性情報を確認")
-                    };
+                    if (allowOverwrite) {
+                        ingredient.dialysis = {
+                            effective: Boolean(dialysis.effective),
+                            indication: String(dialysis.indication || ingredient.dialysis?.indication || "有効性情報を確認")
+                        };
+                    }
 
                     const otherTreatments = Array.isArray(treatment.other) ? treatment.other : [];
-                    if (otherTreatments.length > 0) {
+                    if (allowOverwrite && otherTreatments.length > 0) {
                         ingredient.otherTreatments = otherTreatments.map((item) => ({
                             name: String(item.name || "支持療法"),
                             severityMin: Number.isFinite(Number(item.severity_min)) ? Number(item.severity_min) : 1,
@@ -1789,49 +1819,51 @@
                     const toxicokinetics = profile.toxicokinetics || {};
                     const analysis = profile.analysis || {};
                     const evidence = profile.evidence || {};
-                    const treatmentGuide = {
-                        decontamination: [
-                            ingredient.lavage.allow ? `胃洗浄(${ingredient.lavage.windowMin}分以内)` : "胃洗浄は原則非推奨",
-                            ingredient.charcoal.allow ? `活性炭(${ingredient.charcoal.windowMin}分以内)` : "活性炭は原則非推奨"
-                        ].join(" / "),
-                        antidote: ingredient.antidote.name,
-                        extracorporeal: ingredient.dialysis.effective ? "血液浄化を検討" : "血液浄化は通常適応外",
-                        other: this.toStringList((treatment.other || []).map((item) => item.name)).join(", ") || "支持療法"
-                    };
+                    if (allowOverwrite) {
+                        const treatmentGuide = {
+                            decontamination: [
+                                ingredient.lavage.allow ? `胃洗浄(${ingredient.lavage.windowMin}分以内)` : "胃洗浄は原則非推奨",
+                                ingredient.charcoal.allow ? `活性炭(${ingredient.charcoal.windowMin}分以内)` : "活性炭は原則非推奨"
+                            ].join(" / "),
+                            antidote: ingredient.antidote.name,
+                            extracorporeal: ingredient.dialysis.effective ? "血液浄化を検討" : "血液浄化は通常適応外",
+                            other: this.toStringList((treatment.other || []).map((item) => item.name)).join(", ") || "支持療法"
+                        };
 
-                    ingredient.jpic = this.normalizeJpicProfile({
-                        ingredientName,
-                        aliases: this.toStringList(profile.aliases),
-                        toxicThresholdMgKg: {
-                            caution: this.parseNumericOrNull(thresholds.caution),
-                            toxic: this.parseNumericOrNull(thresholds.toxic),
-                            severe: this.parseNumericOrNull(thresholds.severe),
-                            critical: this.parseNumericOrNull(thresholds.critical)
-                        },
-                        symptomTimeline: normalizedTimeline,
-                        toxicokinetics: {
-                            tmaxHours: String(toxicokinetics.tmaxHours || "情報不足"),
-                            halfLifeHours: String(toxicokinetics.halfLifeHours || "情報不足"),
-                            vdLKg: String(toxicokinetics.vdLKg || "情報不足"),
-                            proteinBindingPct: String(toxicokinetics.proteinBindingPct || "情報不足"),
-                            metabolism: String(toxicokinetics.metabolism || "情報不足"),
-                            elimination: String(toxicokinetics.elimination || "情報不足")
-                        },
-                        treatmentGuide,
-                        analysis: {
-                            recommendedTests: this.toStringList(analysis.recommended_tests),
-                            interpretation: String(analysis.interpretation || "症候と曝露量から総合判断"),
-                            notes: String(analysis.notes || "")
-                        },
-                        evidence: {
-                            source: String(evidence.source || "ocr_result_1770368005162.txt"),
-                            updatedAt: String(evidence.updated_at || "不明"),
-                            level: String(evidence.level || "ocr-reference")
-                        }
-                    }, ingredientName);
+                        ingredient.jpic = this.normalizeJpicProfile({
+                            ingredientName,
+                            aliases: this.toStringList(profile.aliases),
+                            toxicThresholdMgKg: {
+                                caution: this.parseNumericOrNull(thresholds.caution),
+                                toxic: this.parseNumericOrNull(thresholds.toxic),
+                                severe: this.parseNumericOrNull(thresholds.severe),
+                                critical: this.parseNumericOrNull(thresholds.critical)
+                            },
+                            symptomTimeline: normalizedTimeline,
+                            toxicokinetics: {
+                                tmaxHours: String(toxicokinetics.tmaxHours || "情報不足"),
+                                halfLifeHours: String(toxicokinetics.halfLifeHours || "情報不足"),
+                                vdLKg: String(toxicokinetics.vdLKg || "情報不足"),
+                                proteinBindingPct: String(toxicokinetics.proteinBindingPct || "情報不足"),
+                                metabolism: String(toxicokinetics.metabolism || "情報不足"),
+                                elimination: String(toxicokinetics.elimination || "情報不足")
+                            },
+                            treatmentGuide,
+                            analysis: {
+                                recommendedTests: this.toStringList(analysis.recommended_tests),
+                                interpretation: String(analysis.interpretation || "症候と曝露量から総合判断"),
+                                notes: String(analysis.notes || "")
+                            },
+                            evidence: {
+                                source: String(evidence.source || "ocr_result_1770368005162.txt"),
+                                updatedAt: String(evidence.updated_at || "不明"),
+                                level: String(evidence.level || "ocr-reference")
+                            }
+                        }, ingredientName);
+                    }
 
                     this.toStringList(profile.aliases).forEach((alias) => {
-                        if (alias === ingredientName) return;
+                        if (alias === ingredientName || !this.isUsefulOcrAlias(alias)) return;
                         if (!this.ingredientSynonyms[alias]) {
                             this.ingredientSynonyms[alias] = ingredientName;
                             addedSynonyms += 1;
@@ -1840,6 +1872,7 @@
                     });
 
                     this.toStringList(profile.product_aliases).forEach((productName) => {
+                        if (!this.isUsefulOcrProductAlias(productName)) return;
                         if (!this.productDB[productName]) {
                             this.productDB[productName] = [{ ingredient: ingredientName, ratio: 1 }];
                             addedProducts += 1;
