@@ -63,6 +63,24 @@ TEST_KEYWORDS = [
     ("SpO2", "SpO2"),
 ]
 
+NOISE_NAME_WORDS = [
+    "危険度",
+    "中毒症状",
+    "処置法",
+    "治療",
+    "体内動態",
+    "ポイント",
+    "特記事項",
+    "主な製品",
+    "ファイルシート",
+    "文献",
+    "資料",
+    "ページ",
+    "比重",
+    "融点",
+    "沸点",
+]
+
 
 @dataclass
 class Line:
@@ -79,6 +97,37 @@ def clean_inline(text: str) -> str:
     value = value.replace("\u3000", " ")
     value = re.sub(r"\s+", " ", value).strip()
     return value
+
+
+def is_useful_entity_name(text: str, *, max_len: int = 48) -> bool:
+    value = clean_inline(text)
+    if not value or len(value) < 2 or len(value) > max_len:
+        return False
+    if re.search(r"[<>{}\[\]]", value):
+        return False
+    if re.fullmatch(r"No\.\s*\d+\s*\(\d{4}\)", value, flags=re.I):
+        return False
+    if re.fullmatch(r"\(?\d+(?:\.\d+)?\)?", value):
+        return False
+    if re.search(r"(mg/kg|g/kg|ml/kg|ld50|mw[:：]|me[:：])", value, flags=re.I):
+        return False
+    if any(word in value for word in NOISE_NAME_WORDS):
+        return False
+
+    letter_count = len(re.findall(r"[A-Za-z一-龥ぁ-んァ-ヶ]", value))
+    if letter_count < 2:
+        return False
+
+    symbol_count = len(re.findall(r"[^0-9A-Za-z一-龥ぁ-んァ-ヶー・\-\s()/]", value))
+    if symbol_count / max(len(value), 1) > 0.16:
+        return False
+
+    has_japanese = re.search(r"[一-龥ぁ-んァ-ヶ]", value) is not None
+    if not has_japanese:
+        compact = re.sub(r"[\s\-()/]", "", value)
+        if len(compact) < 3 or len(compact) > 32:
+            return False
+    return True
 
 
 def split_tokens(text: str) -> List[str]:
@@ -175,8 +224,16 @@ def parse_title_info(line: str) -> Tuple[str, str, List[str]]:
         aliases.append(title_part)
     if component and component not in aliases:
         aliases.append(component)
-    if risk_text and re.search(r"[0-9A-Za-zぁ-んァ-ヶ一-龥]", risk_text):
-        aliases.append(risk_text[:24])
+
+    dedup_aliases: List[str] = []
+    seen_alias = set()
+    for alias in aliases:
+        key = alias.lower()
+        if key in seen_alias:
+            continue
+        seen_alias.add(key)
+        dedup_aliases.append(alias)
+    aliases = dedup_aliases
     return japanese_name, component, aliases
 
 
@@ -333,6 +390,16 @@ def parse_entries(lines: Sequence[Line]) -> List[Dict[str, object]]:
         ingredient_name, component, aliases = parse_title_info(block[0].text)
         if not ingredient_name:
             continue
+        if not is_useful_entity_name(ingredient_name, max_len=64):
+            continue
+
+        aliases = [
+            alias
+            for alias in aliases
+            if alias == ingredient_name or is_useful_entity_name(alias, max_len=64)
+        ]
+        if ingredient_name not in aliases:
+            aliases = [ingredient_name, *aliases]
 
         section: Dict[str, List[str]] = {"head": [clean_inline(block[0].text)]}
         current = "head"
@@ -366,6 +433,8 @@ def parse_entries(lines: Sequence[Line]) -> List[Dict[str, object]]:
             if any(word in alias for word in ["主な製品", "危険度", "ファイルシート", "文献", "強アルカリ性", "中性"]):
                 continue
             if not re.search(r"[一-龥ぁ-んァ-ヶA-Za-z]", alias):
+                continue
+            if not is_useful_entity_name(alias, max_len=40):
                 continue
             product_aliases.append(alias)
         # 順序保持重複除去

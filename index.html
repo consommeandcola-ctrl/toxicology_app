@@ -1182,11 +1182,13 @@
             buildSearchEntries() {
                 const byNorm = new Map();
                 const pushEntry = (name, type) => {
-                    const normalized = this.normalizeName(name);
+                    const cleanedName = this.sanitizeEntityName(name);
+                    if (!this.isLikelyDrugOrSubstanceName(cleanedName, { maxLen: 64 })) return;
+                    const normalized = this.normalizeName(cleanedName);
                     if (!normalized) return;
                     const current = byNorm.get(normalized);
                     if (!current || (current.type === "ingredient" && type === "product")) {
-                        byNorm.set(normalized, { name, type, normalized });
+                        byNorm.set(normalized, { name: cleanedName, type, normalized });
                     }
                 };
 
@@ -1707,21 +1709,59 @@
                 return [...new Set(values.map((item) => String(item || "").trim()).filter(Boolean))];
             }
 
+            sanitizeEntityName(rawName) {
+                return String(rawName || "")
+                    .normalize("NFKC")
+                    .replace(/[\r\n\t]+/g, " ")
+                    .replace(/[|｜]/g, " ")
+                    .replace(/\s+/g, " ")
+                    .trim();
+            }
+
+            isLikelyDrugOrSubstanceName(rawName, { maxLen = 48 } = {}) {
+                const value = this.sanitizeEntityName(rawName);
+                if (!value || value.length < 2 || value.length > maxLen) return false;
+                if (/[<>{}\[\]]/.test(value)) return false;
+                if (/^No\.\s*\d+\s*\(\d{4}\)$/i.test(value)) return false;
+                if (/^\(?\d+(?:\.\d+)?\)?$/.test(value)) return false;
+                if (/(mg\/kg|g\/kg|ml\/kg|ld50|mw[:：]|me[:：])/i.test(value)) return false;
+
+                const blocked = [
+                    "危険度", "中毒症状", "処置法", "治療", "体内動態", "ポイント", "特記事項",
+                    "主な製品", "ファイルシート", "文献", "資料", "ページ", "比重", "融点", "沸点"
+                ];
+                if (blocked.some((word) => value.includes(word))) return false;
+
+                const letterCount = (value.match(/[A-Za-z一-龥ぁ-んァ-ヶ]/g) || []).length;
+                if (letterCount < 2) return false;
+
+                const hasJapanese = /[一-龥ぁ-んァ-ヶ]/.test(value);
+                const symbolCount = (value.match(/[^0-9A-Za-z一-龥ぁ-んァ-ヶー・\-\s()\/]/g) || []).length;
+                if (symbolCount / value.length > 0.16) return false;
+
+                if (!hasJapanese) {
+                    const compact = value.replace(/[\s\-()/]/g, "");
+                    if (compact.length < 3 || compact.length > 32) return false;
+                }
+                return true;
+            }
+
             isUsefulOcrAlias(alias) {
-                const value = String(alias || "").trim();
-                if (!value || value.length < 2 || value.length > 80) return false;
-                if (value.includes("危険度")) return false;
-                if (/^[\(\)\[\]{}\-_=+*~.。、,:;'"`!?！？0-9A-Za-z]+$/.test(value) && value.length < 4) return false;
-                if (!/[A-Za-z一-龥ぁ-んァ-ヶ]/.test(value)) return false;
+                const value = this.sanitizeEntityName(alias);
+                if (!this.isLikelyDrugOrSubstanceName(value, { maxLen: 64 })) return false;
+                if (/^(?:No\.?|Vol\.?)\s*\d+/i.test(value)) return false;
                 return true;
             }
 
             isUsefulOcrProductAlias(name) {
-                const value = String(name || "").trim();
-                if (!value || value.length < 2 || value.length > 40) return false;
-                if (!/[A-Za-z一-龥ぁ-んァ-ヶ]/.test(value)) return false;
-                const blocked = ["危険度", "ファイルシート", "中毒", "体内動態", "処置法", "治療", "ポイント", "特記事項", "文献", "強アルカリ性", "中性"];
+                const value = this.sanitizeEntityName(name);
+                if (!this.isLikelyDrugOrSubstanceName(value, { maxLen: 40 })) return false;
+                const blocked = [
+                    "危険度", "ファイルシート", "中毒", "体内動態", "処置法", "治療", "ポイント",
+                    "特記事項", "文献", "強アルカリ性", "中性", "比重", "濃度", "資料"
+                ];
                 if (blocked.some((word) => value.includes(word))) return false;
+                if (/^No\.\s*\d+\s*\(\d{4}\)$/i.test(value)) return false;
                 return true;
             }
 
@@ -1732,9 +1772,16 @@
                 let addedSynonyms = 0;
 
                 (Array.isArray(profiles) ? profiles : []).forEach((profile) => {
-                    const ingredientName = String(profile.ingredient_name || "").trim();
-                    if (!ingredientName) return;
+                    const ingredientName = this.sanitizeEntityName(profile.ingredient_name);
+                    if (!this.isLikelyDrugOrSubstanceName(ingredientName, { maxLen: 64 })) return;
                     loadedProfiles += 1;
+
+                    const cleanedAliases = this.toStringList(profile.aliases)
+                        .map((alias) => this.sanitizeEntityName(alias))
+                        .filter((alias) => alias && (alias === ingredientName || this.isUsefulOcrAlias(alias)));
+                    const cleanedProductAliases = this.toStringList(profile.product_aliases)
+                        .map((name) => this.sanitizeEntityName(name))
+                        .filter((name) => this.isUsefulOcrProductAlias(name));
 
                     const existedBefore = Boolean(this.ingredientDB[ingredientName]);
                     if (!existedBefore) {
@@ -1746,7 +1793,8 @@
                     const allowOverwrite = !existedBefore || ingredient.unknown;
                     if (allowOverwrite) {
                         ingredient.unknown = false;
-                        ingredient.component = String(profile.component || ingredient.component || "Unknown");
+                        const component = this.sanitizeEntityName(profile.component);
+                        ingredient.component = component || ingredient.component || "Unknown";
                     }
 
                     const symptoms = this.toStringList(profile.symptoms);
@@ -1832,7 +1880,7 @@
 
                         ingredient.jpic = this.normalizeJpicProfile({
                             ingredientName,
-                            aliases: this.toStringList(profile.aliases),
+                            aliases: cleanedAliases,
                             toxicThresholdMgKg: {
                                 caution: this.parseNumericOrNull(thresholds.caution),
                                 toxic: this.parseNumericOrNull(thresholds.toxic),
@@ -1862,7 +1910,7 @@
                         }, ingredientName);
                     }
 
-                    this.toStringList(profile.aliases).forEach((alias) => {
+                    cleanedAliases.forEach((alias) => {
                         if (alias === ingredientName || !this.isUsefulOcrAlias(alias)) return;
                         if (!this.ingredientSynonyms[alias]) {
                             this.ingredientSynonyms[alias] = ingredientName;
@@ -1871,7 +1919,7 @@
                         this.ingredientSynonymIndex[this.normalizeName(alias)] = ingredientName;
                     });
 
-                    this.toStringList(profile.product_aliases).forEach((productName) => {
+                    cleanedProductAliases.forEach((productName) => {
                         if (!this.isUsefulOcrProductAlias(productName)) return;
                         if (!this.productDB[productName]) {
                             this.productDB[productName] = [{ ingredient: ingredientName, ratio: 1 }];
@@ -1983,10 +2031,15 @@
 
             populateDrugCandidates() {
                 const datalist = document.getElementById("drugCandidates");
-                const candidates = [
-                    ...Object.keys(this.productDB),
-                    ...Object.keys(this.ingredientDB)
-                ].sort((a, b) => a.localeCompare(b, "ja"));
+                const candidateSet = new Set();
+                const appendCandidate = (name) => {
+                    const cleaned = this.sanitizeEntityName(name);
+                    if (!this.isLikelyDrugOrSubstanceName(cleaned, { maxLen: 64 })) return;
+                    candidateSet.add(cleaned);
+                };
+                Object.keys(this.productDB).forEach(appendCandidate);
+                Object.keys(this.ingredientDB).forEach(appendCandidate);
+                const candidates = [...candidateSet].sort((a, b) => a.localeCompare(b, "ja"));
                 datalist.innerHTML = candidates.map((name) => `<option value="${this.escapeHTML(name)}"></option>`).join("");
                 this.buildSearchEntries();
             }

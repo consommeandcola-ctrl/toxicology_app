@@ -1,9 +1,9 @@
 {
   "metadata": {
     "source_file": "/home/ubuntu/.cursor/projects/workspace/uploads/ocr_result_1770368005162.txt",
-    "compiled_at": "2026-02-14T02:17:25.329108+00:00",
+    "compiled_at": "2026-02-14T03:02:54.157454+00:00",
     "description": "OCR抽出資料から自動生成した中毒知識データ",
-    "entry_count": 82
+    "entry_count": 80
   },
   "profiles": [
     {
@@ -12,8 +12,7 @@
       "aliases": [
         "義歯洗浄剤",
         "義歯洗浄剤 (Denture cleaner)",
-        "Denture cleaner",
-        "(N)"
+        "Denture cleaner"
       ],
       "product_aliases": [
         "ステラデント",
@@ -226,14 +225,12 @@
       "aliases": [
         "ビーパウダー",
         "ビーパウダー (Baby Powder)",
-        "Baby Powder",
-        "(Sr"
+        "Baby Powder"
       ],
       "product_aliases": [
         "(日本医科大学附属多摩永山病院薬剤科",
         "救命救急センター)",
         "中毒研究 Vol. 5",
-        "No. 3(1992)",
         "1. 家庭用品 2) 化粧品 301"
       ],
       "toxic_threshold_mg_kg": {
@@ -399,8 +396,7 @@
       "aliases": [
         "マニキュア, マニキュア除光液",
         "マニキュア, マニキュア除光液 (Nail polish, Nail-polish remover)",
-        "Nail polish, Nail-polish remover",
-        "3"
+        "Nail polish, Nail-polish remover"
       ],
       "product_aliases": [
         "商品名",
@@ -414,7 +410,6 @@
         "除去液",
         "る 1 の",
         "1) 日本化粧品技術者会編集",
-        "最新化粧品科学 (改訂増補 II[). 薬事日報社",
         "東京",
         "pp 95-9.",
         "2) (財) 日本中毒情報センター編集",
@@ -426,7 +421,8 @@
         "インターナショナル",
         "5) 吉村正一郎ら編集",
         "急性中毒情報ファイル (第三版). 廣川書店",
-        "8) 後藤策ら編集"
+        "8) 後藤策ら編集",
+        "産業中毒便覧 (増補版). 医歯薬出版"
       ],
       "toxic_threshold_mg_kg": {
         "caution": 25.0,
@@ -600,8 +596,7 @@
       "aliases": [
         "乳液・クリーム類",
         "乳液・クリーム類 (Liquid cream・Creams)",
-        "Liquid cream・Creams",
-        "(2)"
+        "Liquid cream・Creams"
       ],
       "product_aliases": [
         "多数あり",
@@ -613,7 +608,6 @@
         "4) Poisindex (1998)",
         "黒木由美子 ((財) 日本中毒情報センター)",
         "中毒研究 Vol. 12",
-        "No. 1(1999)",
         "生生",
         "シッンプブー mw",
         "圭成分は界面活性剤 (10 一 35% 含有) で",
@@ -627,7 +621,8 @@
         "保湿剤",
         "キレート剤",
         "乳濁剤",
-        "次解促進剤などが含まれている ."
+        "次解促進剤などが含まれている .",
+        "小児の誤飲程度では重篤な中毒は起こちらない ."
       ],
       "toxic_threshold_mg_kg": {
         "caution": 40.0,
@@ -834,8 +829,6 @@
         "(日本医科大学附属多摩永山病院薬剤科",
         "救命救急センター)",
         "中和毒研究 Vol. 4",
-        "No. 2(1991)",
-        "放半鐘 T= ",
         "SRaNTTEN Tay",
         "ヒドラメチルノンはアミジノヒドラゾン系殺虫剤で",
         "家庭用や害虫販除業者用の殺虫剤とし",
@@ -847,13 +840,15 @@
         "マックスフォース",
         "石沢淳子 ((財) 日本中毒情報センター)",
         "中栖研究 Vol. 7",
-        "No. 3(1994)",
         "ST アルデビに (Metaldehvde)",
         "症時須馬還メタアルデヒド (Metaldehyde) a",
         "なめくし駆除剤",
         "調理小型",
         "銅などの骨色反応を",
-        "§E"
+        "BUE",
+        "発熱",
+        "錯乱",
+        "SRE"
       ],
       "toxic_threshold_mg_kg": {
         "caution": 0.05,
@@ -1035,8 +1030,7 @@
       "aliases": [
         "ド以オルトジクロルベンゼン",
         "ド以オルトジクロルベンゼン (Ortnodichlorobenzene)",
-        "Ortnodichlorobenzene",
-        ":(き)s"
+        "Ortnodichlorobenzene"
       ],
       "product_aliases": [
         "うし殺しとして",
@@ -1051,7 +1045,6 @@
         "衣類の防虫剤として広《用いられている .",
         "(防衛医科大学校病院救急部)",
         "中毒研究 Vol. 8",
-        "No. 1(1995)",
         "B (Camoton B",
         "KHOPGWF E LT",
         "パラジクロロベンゼン",
@@ -1060,9 +1053,10 @@
         "ピレスロイド系が使用さき",
         "防由剤 : きものしょうのう (白元) (板形) 15 g",
         "人形しょうのう (藤沢薬品) (板形)5 g",
-        "個 .",
         "藤沢醒脳 (藤沢薬品) (角形)7 g",
-        "和服樺脳 (藤沢薬品) (板形)7g"
+        "和服樺脳 (藤沢薬品) (板形)7g",
+        "個など",
+        "医薬品"
       ],
       "toxic_threshold_mg_kg": {
         "caution": 5.0,
@@ -1237,23 +1231,17 @@
       "ingredient_name": "ナフタリン apntnalene)",
       "component": "ナフタリン apntnalene)",
       "aliases": [
-        "ナフタリン apntnalene)",
-        ": (4"
+        "ナフタリン apntnalene)"
       ],
       "product_aliases": [
         "* 防虫剤の鑑別法",
         "水面に浮かび Fiha",
         "激しく回転する",
-        "比重 (約 0.99)",
-        "[u 浮くテカサシ",
-        "水の入ったコップ (比重 1.16)",
         "全スカる) も移和食考水比生 (約 1.25)",
         "の入ったコップに入れる",
-        "[寺 2 のみセッ",
         "(日本医科大学附属多摩永山病院薬剤科",
         "救命救急センター)",
         "中毒研究 Vol. 4",
-        "No. 4(1991)",
         "ーー王誠 = いいゼ",
         "諸税較上バパラジクロルベンゼン (防虫剤) : @)",
         "IR (»-dichlorobenzene)",
@@ -1264,7 +1252,12 @@
         "商品名",
         "による確認",
         "誤飲したのがパラジクロルベンゼンであれば",
-        "消化管刺激症状のほかはあまりみられず重人篤な"
+        "消化管刺激症状のほかはあまりみられず重人篤な",
+        "中毒になるとは考えにくい .",
+        "そのうちの 1 個が",
+        "有効成分が 100% である . ただし",
+        "もっと大きな角桂",
+        "あるいは消臭芳香剤のトイレボールを食べているこ"
       ],
       "toxic_threshold_mg_kg": {
         "caution": 37.0,
@@ -1454,7 +1447,7 @@
         "3) 梅津剛吉 : 家庭用化学薬品の知識 (1982)",
         "黒木由美子 ((財) 日本中毒情報センター)",
         "中毒研究 Vol. 11",
-        "No. 2(1998)"
+        "gETE ETE"
       ],
       "toxic_threshold_mg_kg": {
         "caution": 0.975,
@@ -1626,8 +1619,7 @@
       "component": "乾燥剤 Oesiccant",
       "aliases": [
         "乾燥剤 Oesiccant",
-        "semm 乾燥剤 Oesiccant( Hifti 1L 7 2 calcium chloride を",
-        "(A)4"
+        "semm 乾燥剤 Oesiccant( Hifti 1L 7 2 calcium chloride を"
       ],
       "product_aliases": [
         "如化カルシタツムな",
@@ -1638,7 +1630,6 @@
         "ドライペベット",
         "(防衛医科大学校病院救急部)",
         "中毒研究 Vol. 7",
-        "No. 2(1994)",
         "魚度保持剤 G"
       ],
       "toxic_threshold_mg_kg": {
@@ -1798,8 +1789,7 @@
       "aliases": [
         "末用化学御所鮮度保持剤",
         "末用化学御所鮮度保持剤 (Freshness saver)",
-        "Freshness saver",
-        ": (る"
+        "Freshness saver"
       ],
       "product_aliases": [
         "活性酸化鉄",
@@ -2008,8 +1998,7 @@
       "ingredient_name": "区 5z 人 I4 /—)bEthano)",
       "component": "区 5z 人 I4 /—)bEthano)",
       "aliases": [
-        "区 5z 人 I4 /—)bEthano)",
-        "(ご)"
+        "区 5z 人 I4 /—)bEthano)"
       ],
       "product_aliases": [],
       "toxic_threshold_mg_kg": {
@@ -2378,8 +2367,7 @@
       "aliases": [
         "灯油",
         "RERR 灯油 (Kerosene)",
-        "Kerosene",
-        ": (は"
+        "Kerosene"
       ],
       "product_aliases": [
         "灯油 1 号 (白灯油) は主として曖房用燃料として用いる",
@@ -2400,12 +2388,12 @@
         "(日本医科大学附属多摩永山病院薬剤科",
         "救命救急センター)",
         "中毒研究 Vol. 5",
-        "No. 2(1992)",
-        "EaEnE] ",
         "BL VUTF",
         "fB NMawch",
-        "Hanabi(Fireworks)) [REEEEIG",
-        "マッチの頭薬の主成分は塩素酸カリウムで"
+        "マッチの頭薬の主成分は塩素酸カリウムで",
+        "1 本に 10 一 15 mg 含有きれている . 摩擦側面",
+        "の主成分は赤リンと三硫化アンチモンであるが",
+        "毒性が低くほとんど問題はない ."
       ],
       "toxic_threshold_mg_kg": {
         "caution": 1.25,
@@ -2599,7 +2587,6 @@
         "現在販",
         "小山完二 (筑波大学附属病院救急部)",
         "中毒研究 Vol. 7",
-        "No. 4(1994)",
         "不凍液ぃ une e",
         "ると 5 半",
         "不凍液 (別名 : クーラント) は",
@@ -2618,8 +2605,9 @@
         "アロンアル",
         "ファゼリー状瞬間",
         "工業用 : セメデダイン 3000 シリーズ (DH",
-        "DT",
-        "DXT"
+        "DXT",
+        "DXL",
+        "スーバー"
       ],
       "toxic_threshold_mg_kg": {
         "caution": 0.025,
@@ -2826,17 +2814,17 @@
         "ペンライトなど",
         "田村満代 (日本中毒情報センター)",
         "中毒研究 Vol. 10",
-        "No. 1(1997)",
         "ーー TMS",
         "家庭皿品",
-        "人ヽ arte) .",
         "保冷剤 od se イ e",
         "ここでいう保冷剤とは",
         "ゲル状の内容物を冷凍庫で凍結あるいは保冷して使用するアイスノ",
         "ン %$ に代表きれる氷枕の代用品や",
         "生鮮食品の低温保存に使用きれるアイスボールと呼ばれる",
         "水だけのものや",
-        "袋をたたいたり"
+        "袋をたたいたり",
+        "刺激によって瞬間的に冷却するコールドパック剤とは異な",
+        "るものである ."
       ],
       "toxic_threshold_mg_kg": {
         "caution": 4000.0,
@@ -3002,8 +2990,7 @@
       "aliases": [
         "瞬間冷却剤",
         "sans 瞬間冷却剤 (Instant cold pack)",
-        "Instant cold pack",
-        ": &s"
+        "Instant cold pack"
       ],
       "product_aliases": [
         "アイメスノアオールレ 4 カラーツタダテタールル",
@@ -3013,13 +3000,11 @@
         "イジシメカット",
         "' ずすずゃびる",
         "ひみまるもるてんヒヤセルミニケッキタクーラーポシェットタデ",
-        "グクール R=F—_THKIWY 7",
         "るんるをんマグクール",
         "ジイオカ",
         "2) Poisindex (1999)",
         "田村満代 (内日本中毒情報センター)",
         "中和毒研究 Vol. 13",
-        "No. 1(2000)",
         "廃油処理剤には",
         "固化型",
         "吸収型",
@@ -3029,7 +3014,9 @@
         "乳化型 : 陰",
         "非イオン系界面活性剤で",
         "油を乳化させて廃棄する . 界面活性剤の濃度が",
-        "40~100% と高いため"
+        "40~100% と高いため",
+        "少量でも注意が必要である .",
+        "けん化型"
       ],
       "toxic_threshold_mg_kg": {
         "caution": 0.63,
@@ -3201,14 +3188,12 @@
       "ingredient_name": "ジアゼパム O1iazepam)",
       "component": "ジアゼパム O1iazepam)",
       "aliases": [
-        "ジアゼパム O1iazepam)",
-        "© 8)3"
+        "ジアゼパム O1iazepam)"
       ],
       "product_aliases": [
         "(日本医科大学附属多摩永山病院薬剤科",
         "救命救急センター)",
         "中和毒研究 Vol. 5",
-        "No. 4(1992)",
         "バルビツール酸類 &",
         "バルビタール",
         "フェノバルビタール (フェノバール",
@@ -3218,17 +3203,18 @@
         "メタルビタール (ゲモニール)",
         "EEa 』バルビツールま",
         "を E 上に目長時間作用型ハルビツール類のまとめ",
-        "[LT ea",
         "常用量皮下",
         "筋注最高 600 一 800mg まで",
         "50~200 mg",
-        "ms",
         "マウス (P.O.) 600 mg",
-        "kg",
         "325 mg",
         "kg 600~800 mg",
         "kg 500 mg",
-        "由衣発現大 104g"
+        "由衣発現大 104g",
+        "m7 以上 40g",
+        "m7 以上",
+        "(血中湿度)",
+        "55200 gg"
       ],
       "toxic_threshold_mg_kg": {
         "caution": 0.35,
@@ -3413,34 +3399,33 @@
       "aliases": [
         "医薬品 /\\ パリソリレート",
         "医薬品 /\\ パリソリレート (Barbiturate)",
-        "Barbiturate",
-        ":(べ)ー"
+        "Barbiturate"
       ],
       "product_aliases": [
         "表に示した . バルビツール酸の誘導体がバルビツレートであり",
-        "Ri",
-        "Rs",
         "と X をそれぞ",
         "れ置換すると",
         "構造式ならびに商品名を示す .",
         "2. 医薬品 1) 催眠鎖静剤 385",
         "バルビツレート (Gamma",
         "僅 3 コ",
-        "1 ミ",
         "和きき",
-        "i%",
-        "q ~ be",
         "知 Zao",
-        "ささ — Ho#H",
-        "8 [git",
         "N さき sr 1",
-        "ーー [3 はへ",
-        "赴ド = ®n E)",
-        "ーーて",
         "B そそ B",
-        "g8 8",
-        "3 さ 3",
-        "ミト"
+        "ミト",
+        "トーゴー",
+        "¥ へら ¥ x へ Hgg l",
+        "IN kd ~ NN に ~ いあ",
+        "ErfildE £z & Y",
+        "所上",
+        "りゃ",
+        "ゃてる",
+        "o 回",
+        "を語",
+        "リグシコリキ",
+        "o o o 〇に o o",
+        "さきささ"
       ],
       "toxic_threshold_mg_kg": {
         "caution": 0.25,
@@ -3628,15 +3613,12 @@
       "component": "Carbamazepine",
       "aliases": [
         "力ルバマゼピン",
-        "0 ] 力ルバマゼピン (Carbamazepine)",
-        "Carbamazepine",
-        "(9"
+        "Carbamazepine"
       ],
       "product_aliases": [
         "(日本医科大学附属多摩永山病院薬剤科",
         "救命救急センター)",
         "中毒研究 Vol. 4",
-        "No. 4(1991)",
         "EEEN 3"
       ],
       "toxic_threshold_mg_kg": {
@@ -3826,8 +3808,7 @@
       "aliases": [
         "チアジン系薬剤",
         "EER ) J チアジン系薬剤 (Phenothiazines)",
-        "Phenothiazines",
-        "(の"
+        "Phenothiazines"
       ],
       "product_aliases": [],
       "toxic_threshold_mg_kg": {
@@ -4018,8 +3999,7 @@
       "component": "用つづつづ ricyclic antidepressant drug)",
       "aliases": [
         "用つづつづ ricyclic antidepressant drug)",
-        "Se =IRR 用つづつづ ricyclic antidepressant drug)",
-        ": (人)"
+        "Se =IRR 用つづつづ ricyclic antidepressant drug)"
       ],
       "product_aliases": [
         "イミセールや",
@@ -4031,7 +4011,6 @@
         "アプェデジテミン (アジデリット 9)",
         "アデプレス @",
         "ラント",
-        "ay®",
         "をゲトリッセタ. イノメアタクノーカルノーマルクッタ",
         "1FTFNVO",
         "TTFARY",
@@ -4039,13 +4018,14 @@
         "アトリアタクタールのアミプブリッ",
         "シュベールタ)",
         "ノリトリアプチリン (ノリ",
-        "トレン @",
         "センシシバル @)",
         "次の他もメリドラセン (ナメオールルタ)",
         "アモキサビン (アモネギネザサシ 9)",
         "ドスレンピン (プロチ",
         "アデジン 5) など",
-        "中谷妖男 (関西医科大学救命救急センター)"
+        "中谷妖男 (関西医科大学救命救急センター)",
+        "中毒研究 Vol. 7",
+        "IL ヨ択的セロトニン再取り込み阻害薬 Fe)"
       ],
       "toxic_threshold_mg_kg": {
         "caution": 0.25,
@@ -4238,17 +4218,14 @@
       "aliases": [
         "リチチウム",
         "E®a ipdi リチチウム (Lithium carbonate)",
-        "Lithium carbonate",
-        "(CA"
+        "Lithium carbonate"
       ],
       "product_aliases": [
         "リーマス錠",
         "椎 ” 上迷 (北里大学東病院薬剤部)",
         "中毒研究 Vol. 13",
-        "No. 2(2000)",
         "アスピリンい wm —",
         "アスピリンは",
-        "1853 年",
         "ドイツの Karl Gerhardt により合成され",
         "1899 年に市販さきれて以",
         "来解熱",
@@ -4265,7 +4242,7 @@
         "(日本医科大学附属多摩永山病院薬剤科",
         "救命救急センター)",
         "中毒研究 Vol. 5",
-        "No. 1(1992)"
+        "連が"
       ],
       "toxic_threshold_mg_kg": {
         "caution": 100.0,
@@ -4449,14 +4426,12 @@
       "aliases": [
         "アセトアミ J フェン",
         "アセトアミ J フェン (Acetaminophen)",
-        "Acetaminophen",
-        "(A)"
+        "Acetaminophen"
       ],
       "product_aliases": [
         "(日本医科大学附属多岩水山病院薬剤科",
         "救命救急センター)",
-        "中毒研究 Vol. 4",
-        "No. 2(1991)"
+        "中毒研究 Vol. 4"
       ],
       "toxic_threshold_mg_kg": {
         "caution": 35.0,
@@ -4599,8 +4574,7 @@
       "aliases": [
         "医薬唱 イゴヲプロ =) E )",
         "医薬唱 イゴヲプロ =) E ) (Ibuprofen)",
-        "Ibuprofen",
-        "(6"
+        "Ibuprofen"
       ],
       "product_aliases": [
         "ー般用薬",
@@ -4609,8 +4583,6 @@
         "(日本医科大学附属多摩永山病院薬剤科",
         "救命救急センター)",
         "中毒研究 Vol. 4",
-        "No. 3(1991)",
-        "ンーてにのいい ——",
         "1982 年のわが国における鎮痛人鎮静剤中毒の調査では",
         "3363 例中",
         "Wlies k oasHl 2 Hv72",
@@ -4626,7 +4598,8 @@
         "2) POISINDEX 98",
         "3) 急性中毒情報ファイル第 3 版",
         "廣川書店",
-        "笹嶋勝 (昭和大学病院薬剤部)"
+        "笹嶋勝 (昭和大学病院薬剤部)",
+        "中毒研究 Vol. 12"
       ],
       "toxic_threshold_mg_kg": {
         "caution": 15.1,
@@ -4809,8 +4782,7 @@
       "aliases": [
         "サリ F )DEE",
         "サリ F )DEE (Saticylic acid)",
-        "Saticylic acid",
-        ": 4"
+        "Saticylic acid"
       ],
       "product_aliases": [
         "メフェナム酸ポンタール",
@@ -4822,21 +4794,21 @@
         "スルフェナ (販売中止)",
         "フロクタフェニン (販売中止) イダロン (販売中止)",
         "トルフェナム融しあとが",
-        "COOH COOH__",
-        "CF",
-        "coo- CF]",
-        " GO",
         "Os の H b",
         "HC CH",
-        "(ME:281.24) 3",
         "メフェナム酸フルフェナム酸",
         "アルミニウム",
         "中 or coor CH",
-        "C1",
-        "J coct—com { 9 の 9$",
         "NZ 8 HH HH",
         "(MW : 261.71)",
-        "(MW : 406.36) トルフェナム臣"
+        "(MW : 406.36) トルフェナム臣",
+        "学登次デウッジシ",
+        "冨岡勝世 (日本医科大学附属多摩永山病院薬剤科)",
+        "中毒研究 Vol. 10",
+        "ジゴキシン Oisoxi や",
+        "心房細動",
+        "ジゴキシン錠 0.25mg",
+        "ジゴシン 1.000 倍散"
       ],
       "toxic_threshold_mg_kg": {
         "caution": 0.05,
@@ -5024,8 +4996,7 @@
       "component": "阻害剤 ACE Inhibitor)",
       "aliases": [
         "阻害剤 ACE Inhibitor)",
-        "Exm ACE 阻害剤 ACE Inhibitor)",
-        "(ペ)。"
+        "Exm ACE 阻害剤 ACE Inhibitor)"
       ],
       "product_aliases": [
         "レニベース (エナラプリル)",
@@ -5042,16 +5013,16 @@
         "® A Ed Al hi -)",
         "医薬品",
         "= (ACE Inhibitor)",
-        "B 3",
         "g 回に",
         "回局",
-        "ご p = ",
         "4 を局",
-        "きき S =",
         "s B d 回",
         "回 E = 2",
-        "LS — < S —",
-        "~ 人人ひ 1 1 A"
+        "~ 人人ひ 1 1 A",
+        "回ミ",
+        "ぎ有 5 で中",
+        "S ご",
+        "Hgealig B ききに"
       ],
       "toxic_threshold_mg_kg": {
         "caution": null,
@@ -5190,8 +5161,7 @@
       "ingredient_name": "カルシウム拮抗剤 Cacimum channel blocker)",
       "component": "カルシウム拮抗剤 Cacimum channel blocker)",
       "aliases": [
-        "カルシウム拮抗剤 Cacimum channel blocker)",
-        ":(ペ)ー(A)5 こ 4"
+        "カルシウム拮抗剤 Cacimum channel blocker)"
       ],
       "product_aliases": [
         "ニトログリセリン錠 (0.3mg)",
@@ -5215,8 +5185,7 @@
         "5) 日本医薬品集第 23 版",
         "薬業時報社 (現しほう)",
         "近藤留美子 (北里大学病院薬剤部)",
-        "中毒研究 Vol. 13",
-        "No. 4(2000)"
+        "中毒研究 Vol. 13"
       ],
       "toxic_threshold_mg_kg": {
         "caution": 0.5,
@@ -5395,8 +5364,7 @@
       "aliases": [
         "ビビドロキシジン製剤",
         "ビビドロキシジン製剤 (Hydroxyzine)",
-        "Hydroxyzine",
-        "20s"
+        "Hydroxyzine"
       ],
       "product_aliases": [
         "T2F97R TITFyvIAP",
@@ -5418,11 +5386,10 @@
         "5) Goodman Gilman 薬理書",
         "第 6 版",
         "廣川書店",
-        "6) T@292A®",
         "TEZ9IAP®",
-        "A2F¥a—TFa—A",
         "引地文 (北里大学病院薬剤部)",
-        "中毒研究 Vol. 16"
+        "中毒研究 Vol. 16",
+        "ESEmree"
       ],
       "toxic_threshold_mg_kg": {
         "caution": 63.0,
@@ -5587,8 +5554,7 @@
       "aliases": [
         "抗医スタ = VEl",
         "mxa 抗医スタ = VEl (Antihistamines)",
-        "Antihistamines",
-        "20。"
+        "Antihistamines"
       ],
       "product_aliases": [],
       "toxic_threshold_mg_kg": {
@@ -5781,14 +5747,11 @@
       "aliases": [
         "回名ドリン",
         "= 回名ドリン (Ephedrine)",
-        "Ephedrine",
-        "(へ)4"
+        "Ephedrine"
       ],
       "product_aliases": [
         "塩酸エフェドリン : エフェドリン散 10%",
-        "$E25mg",
         "注 40mg",
-        "1m7",
         "塩酸メチルエフェドリン : 新ルル A 錠",
         "ストナプラス",
         "ジキニン液 D",
@@ -5808,7 +5771,9 @@
         "新コルゲンコーワ條炎ソフトカプセル @",
         "カフェイン非配合徐放製剤 ",
         "エスタックニスキャップ %@",
-        "コンタック 600SR%"
+        "コンタック 600SR%",
+        "ストナリニ $",
+        "1) POISINDEX"
       ],
       "toxic_threshold_mg_kg": {
         "caution": 0.8,
@@ -5994,12 +5959,9 @@
       "ingredient_name": "抗コリン剤 Anticholinesterase drug)",
       "component": "抗コリン剤 Anticholinesterase drug)",
       "aliases": [
-        "抗コリン剤 Anticholinesterase drug)",
-        ": (D)~(R)g—y"
+        "抗コリン剤 Anticholinesterase drug)"
       ],
-      "product_aliases": [
-        "ee"
-      ],
+      "product_aliases": [],
       "toxic_threshold_mg_kg": {
         "caution": 125.0,
         "toxic": 250.0,
@@ -6188,7 +6150,6 @@
         "Baselt Cravey",
         "峯村純子 (昭和大学病院薬剤部)",
         "中毒研究 Vol. 13",
-        "No. 4(2000)",
         "gpmyy 7 = 0",
         "クレオソートぃ wu",
         "正貴丸",
@@ -6197,7 +6158,8 @@
         "食品の保",
         "存に用いられ",
         "強い防腐作用を有する .",
-        "防腐"
+        "防腐",
+        "殺菌作用はフェノールに劣るが"
       ],
       "toxic_threshold_mg_kg": {
         "caution": 10.0,
@@ -6395,14 +6357,12 @@
       "component": "グクレゾソゾール石けん Sapenated cresol solution)",
       "aliases": [
         "グクレゾソゾール石けん Sapenated cresol solution)",
-        "ExR グクレゾソゾール石けん Sapenated cresol solution)",
-        "© (5"
+        "ExR グクレゾソゾール石けん Sapenated cresol solution)"
       ],
       "product_aliases": [
         "クレゾール石けん液",
         "上條天人 (北里大学医学部救命救急医学教室)",
         "中毒研究 Vol. 15",
-        "No. 4(2002)",
         "手錠品格 S",
         "aus",
         "ag km 上"
@@ -6588,15 +6548,12 @@
       "aliases": [
         "クロルヘキシジン",
         "EER クロルヘキシジン (Ccnlorhexidine)",
-        "Ccnlorhexidine",
-        ":(ぷ)"
+        "Ccnlorhexidine"
       ],
       "product_aliases": [
         "LETVH",
-        "セビアテン <",
         "のルコネート族",
         "E ゼスタラブモビデアディール洲",
-        "ATY7u>",
         "W 液",
         "ヒビテン消毒用クリーム",
         "ヘへキザックアルコール",
@@ -6609,8 +6566,6 @@
         "濃度である .",
         "瀧野口也 (防衛医科大学校病院救急部)",
         "中毒研究 Vol. 9",
-        "No. 4(1996)",
-        "計る二 \\) T=F —F-3",
         "ナファゾリン含有薬 5"
       ],
       "toxic_threshold_mg_kg": {
@@ -6800,8 +6755,7 @@
       "aliases": [
         "凍ボビドンヨド",
         "80 凍ボビドンヨド (Povidone iodine)",
-        "Povidone iodine",
-        "(ご)。"
+        "Povidone iodine"
       ],
       "product_aliases": [
         "イソジンガーグル",
@@ -6818,8 +6772,7 @@
         "ホモド",
         "ングゲルなど",
         "笹鳴勝 (昭和大学病院薬剤部医薬品情報案)",
-        "中毒研究 Vol. 8",
-        "No. 2(1995)"
+        "中毒研究 Vol. 8"
       ],
       "toxic_threshold_mg_kg": {
         "caution": 4.0,
@@ -6951,8 +6904,7 @@
       "aliases": [
         "過酸化水素",
         "CExEE 過酸化水素 (Hydrogen peroxide)",
-        "Hydrogen peroxide",
-        ": 4"
+        "Hydrogen peroxide"
       ],
       "product_aliases": [
         "家庭用漂白剤 : 液体ワイドハイター",
@@ -6969,9 +6921,7 @@
         "オキシフル",
         "瀧野昌也 (防衛医科大学校病院救急部)",
         "中毒研究 Vol. 9",
-        "No. 2(1996)",
-        "Exs",
-        "= 時"
+        "Exs"
       ],
       "toxic_threshold_mg_kg": {
         "caution": 10.5,
@@ -7137,8 +7087,7 @@
       "ingredient_name": "人局所麻酔薬 L。s』 anesthetics)",
       "component": "人局所麻酔薬 L。s』 anesthetics)",
       "aliases": [
-        "人局所麻酔薬 L。s』 anesthetics)",
-        ": ®s"
+        "人局所麻酔薬 L。s』 anesthetics)"
       ],
       "product_aliases": [
         "1) Kaufman B",
@@ -7151,20 +7100,20 @@
         "Williams & Wilkins",
         "Baltimore",
         "pp1182-6.",
-        "21 (6S) : 43-50.",
         "4) 日本医療情報センター編",
         "日本医薬品集第 23 版",
         "薬業時報社 (現 : (株) ヒじほう)",
         "東京",
         "arel = ビー",
         "a ai 局所麻酔薬 (Local anesthetics)",
-        "_r",
         "nEE = 2",
         "生生回",
         "1lg",
-        "gf",
-        "~ 7 w",
-        "SEE"
+        "SEE",
+        "写っ",
+        "人接",
+        " で co ~ ao 人 1 る",
+        "Yo TATITSe®"
       ],
       "toxic_threshold_mg_kg": {
         "caution": 0.25,
@@ -7370,21 +7319,21 @@
         "ICE",
         "CRYSTAL",
         "1) POISINDEX",
-        "Vol.95",
         "2) 急性中毒情報ファイル第 3 版",
-        "3) 薬",
         "毒物中毒救急マニュアル改訂 5 版",
         "4) 救急医学 . 12(10)",
         "5) 臨床中毒",
         "中山書店",
         "笹嶋勝 (昭和大学病院薬剤部)",
         "中毒研究 Vol. 11",
-        "No. 3(1998)",
         "2. 医薬品 12) 乱用薬物 272",
         "麻薬 ate ーッイコ",
         "麻薬 (Narcotics) の定義を広くとらえると",
         "麻酔作用",
-        "習慣性のある物質全般を指す . 大き"
+        "習慣性のある物質全般を指す . 大き",
+        "く以下のように分類きされる.",
+        "1 オピオイド (アヘン",
+        "モルヒネ"
       ],
       "toxic_threshold_mg_kg": {
         "caution": 0.5,
@@ -7578,8 +7527,7 @@
       "aliases": [
         "四塩化炭素",
         "四塩化炭素 (Carbon tetrachloride)",
-        "Carbon tetrachloride",
-        "®)s"
+        "Carbon tetrachloride"
       ],
       "product_aliases": [
         "ピレン (Pyrene)",
@@ -7588,7 +7536,6 @@
         "1) 薬物中毒必携第 4 版",
         "医歯薬出版",
         "2) 産業中毒便覧 (増補版)",
-        "3) 薬",
         "毒物中毒救急マニュアル第 5 版",
         "医薬ジャーナル社",
         "4) 急性中毒情報ファイル",
@@ -7598,10 +7545,8 @@
         "Micromedex",
         "笹嶋勝 (昭和大学病院薬剤部)",
         "中毒研究 Vol. 9",
-        "No. 4(1996)",
         "3. 工業用品 1) 有機溶剤 29Z",
-        "工業用品",
-        " y"
+        "工業用品"
       ],
       "toxic_threshold_mg_kg": {
         "caution": null,
@@ -7751,22 +7696,17 @@
       "aliases": [
         "リヴエエ / — JU",
         "ae リヴエエ / — JU (Phenol)",
-        "Phenol",
-        ": (へ 4"
+        "Phenol"
       ],
       "product_aliases": [
         "消毒用フェノール 1ー2%: 手指",
         "皮膚",
-        "2ー5%: 部屋",
         "器具",
-        "3 一",
-        "5% : 排泄物",
         "パオスクレー注 250 mg",
         "A(5 m7 り (内背核)",
         "(日本医科大学附属多摩永山病院薬剤科",
         "救命救急センター)",
         "中毒研究 Vol. 4",
-        "No. 3(1991)",
         "3. 工業用品 1) 有機溶剤 489"
       ],
       "toxic_threshold_mg_kg": {
@@ -7938,8 +7878,7 @@
       "aliases": [
         "ホルムアルデヒド",
         "ホルムアルデヒド (Formaldehyde)",
-        "Formaldehyde",
-        "204"
+        "Formaldehyde"
       ],
       "product_aliases": [],
       "toxic_threshold_mg_kg": {
@@ -8127,8 +8066,7 @@
       "aliases": [
         "アセトン",
         "0 アセトン (Acetone)",
-        "Acetone",
-        ": &s"
+        "Acetone"
       ],
       "product_aliases": [
         "痺基剤 (ボンド S",
@@ -8137,7 +8075,6 @@
         "凶脂",
         "サックスラッカー",
         "ツソニス",
-        "ゴムなど低沸点溶剤の浴剤としてや",
         "塗料",
         "反落剤インキの湾剤",
         "金属の洗浄流",
@@ -8154,7 +8091,8 @@
         "同様の注意が",
         "必要である",
         "画マニュキア液の成分",
-        "デモトシン * 10 党"
+        "デモトシン * 10 党",
+        "楠脂類 : 10 一 15%"
       ],
       "toxic_threshold_mg_kg": {
         "caution": 75.0,
@@ -8350,8 +8288,7 @@
       "aliases": [
         "塩化メチレン",
         "塩化メチレン (Methylene chloride)",
-        "Methylene chloride",
-        "(&)s"
+        "Methylene chloride"
       ],
       "product_aliases": [],
       "toxic_threshold_mg_kg": {
@@ -8523,8 +8460,7 @@
       "aliases": [
         "ク ana ホルム",
         "ク ana ホルム (Chloroform)",
-        "Chloroform",
-        "23)。"
+        "Chloroform"
       ],
       "product_aliases": [],
       "toxic_threshold_mg_kg": {
@@ -8694,8 +8630,7 @@
       "ingredient_name": "トリクロロエチレン Tricnloroethylene)",
       "component": "トリクロロエチレン Tricnloroethylene)",
       "aliases": [
-        "トリクロロエチレン Tricnloroethylene)",
-        ":(べ)。"
+        "トリクロロエチレン Tricnloroethylene)"
       ],
       "product_aliases": [],
       "toxic_threshold_mg_kg": {
@@ -8826,19 +8761,16 @@
       "aliases": [
         "胃化炭素",
         "ーー胃化炭素 (Carbon monoxide)",
-        "Carbon monoxide",
-        "ド (Ga"
+        "Carbon monoxide"
       ],
       "product_aliases": [
         "ビロ亜硫酸ナトリウム (食品保存剤)",
         "乗崎恵美子 (福島県立医科大学医学部法医学教室)",
         "中毒研究 Vol. 12",
-        "No. 4(1999)",
         "3. 工業用品 2) 有毒ガス 272",
         "密素酸化物 oxide",
         "rarese)",
         "窒素と酸素からなる化合物 (NO",
-        "NO",
         "NO など) の総称である . これらを",
         "吸入すると",
         "気道粘膜",
@@ -9046,8 +8978,7 @@
       "aliases": [
         "ブフロン reon",
         "ブフロン reon(Trade name) /Fluorocarbons)",
-        "Trade name",
-        ": ®s"
+        "Trade name"
       ],
       "product_aliases": [
         "ブフロン 11",
@@ -9056,7 +8987,6 @@
         "現在は使われなくなっている",
         "小山完二 (筑波大学附属病院救急部)",
         "中毒研究 Vol. 8",
-        "No. 1(1995)",
         "3. 工業用品 2) 有毒ガス 519"
       ],
       "toxic_threshold_mg_kg": {
@@ -9242,8 +9172,7 @@
       "aliases": [
         "プロパンガス",
         "プロパンガス (Liquefied petroleum gas)",
-        "Liquefied petroleum gas",
-        "3"
+        "Liquefied petroleum gas"
       ],
       "product_aliases": [],
       "toxic_threshold_mg_kg": {
@@ -9421,8 +9350,7 @@
       "aliases": [
         "カドミウム",
         "カドミウム (admium)",
-        "admium",
-        "(人 4"
+        "admium"
       ],
       "product_aliases": [
         "顔料",
@@ -9438,17 +9366,17 @@
         "硝酸カドミウム",
         "酸カドミウムなど",
         "1) 中毒ヘンドブック (1999)",
-        "2) 薬",
         "薬物中毒救急マニュアル (1999)",
         "3) 寺田賢",
         "重金属およびその化合物による中和毒ヒ素",
         "セレン",
         "カみカドミウム. 中毒研究",
         "4) 大城等",
-        "他 ",
         "5) 毎日新聞",
         "1998 年 9 月 24 日.",
-        "ヒ素 (半導体"
+        "ヒ素 (半導体",
+        "合金添加元素)",
+        "ヒ酸 (木材防腐剤"
       ],
       "toxic_threshold_mg_kg": {
         "caution": 2.5,
@@ -9636,217 +9564,12 @@
       }
     },
     {
-      "ingredient_name": "E E£",
-      "component": "Acid",
-      "aliases": [
-        "E E£",
-        "E E£ (Acid)",
-        "Acid",
-        ": (へ"
-      ],
-      "product_aliases": [
-        "塩酸 (35ー38%)",
-        "希塩酸 (10%)",
-        "酸 (30 一 32%)",
-        "食酢 (52%)",
-        "(日本医科大学付属多摩永山病院薬剤科)",
-        "中毒研究 Vol. 9",
-        "No. 1(1996)",
-        "ER 関本",
-        "Beeial アルカリ (Aikali 郁険度 : (4",
-        "その濃度により",
-        "た接触状況によりさまざまな組織損傷症状を呈する",
-        "とくに危険なアルカリとしては",
-        "5%% 以",
-        "上のアンモニア",
-        "水酸化カルシウム",
-        "酸化カルシウム",
-        "1% 以上の水酸化ナトリウム",
-        "炭化カ",
-        "ルシウム",
-        "メクタケイ酸ナトリウム",
-        "ケイ酸ナトリウム",
-        "テトラエチレンペジン居 5 放和本吉",
-        "レンテトラミン",
-        "リン酸三ナトリウムなどがある . また"
-      ],
-      "toxic_threshold_mg_kg": {
-        "caution": null,
-        "toxic": null,
-        "severe": null,
-        "critical": null
-      },
-      "symptoms": [
-        "イレ洗浄剤やさきまざまな家庭用薬品として",
-        "われわれの身の回りで日常頻繁に用いられている .",
-        "他の中毒起因物質とは異なり",
-        "とくに解毒楽となる薬品はない . アルカリによる中和はその発",
-        "熱反応や",
-        "生理食塩水などで洗い流して",
-        "希釈除去することが予後を大きく左右することになる .",
-        "因する",
-        "Bhge",
-        "喉頭浮腫",
-        "気管支炎",
-        "肺水腫",
-        "ロ趙腔膜びらん",
-        "上部消化管障害",
-        "骨窒孔",
-        "縦隔炎",
-        "声門浮腫による呼吸困",
-        "(胃内容物は褐色となる)",
-        "AIETEET",
-        "結膜炎",
-        "角膜損傷",
-        "意識障害",
-        "腎障害",
-        "アシドーシス"
-      ],
-      "critical_symptoms": [
-        "意識障害",
-        "ショック"
-      ],
-      "symptom_timeline": [
-        {
-          "window": "0-2時間",
-          "symptoms": [
-            "イレ洗浄剤やさきまざまな家庭用薬品として",
-            "われわれの身の回りで日常頻繁に用いられている .",
-            "他の中毒起因物質とは異なり",
-            "とくに解毒楽となる薬品はない . アルカリによる中和はその発"
-          ],
-          "red_flags": [
-            "意識障害",
-            "ショック"
-          ]
-        },
-        {
-          "window": "2-8時間",
-          "symptoms": [
-            "他の中毒起因物質とは異なり",
-            "とくに解毒楽となる薬品はない . アルカリによる中和はその発",
-            "熱反応や",
-            "生理食塩水などで洗い流して",
-            "希釈除去することが予後を大きく左右することになる .",
-            "因する"
-          ],
-          "red_flags": [
-            "意識障害",
-            "ショック"
-          ]
-        },
-        {
-          "window": "8時間以降",
-          "symptoms": [
-            "意識障害",
-            "ショック"
-          ],
-          "red_flags": [
-            "意識障害",
-            "ショック"
-          ]
-        }
-      ],
-      "toxicokinetics": {
-        "tmaxHours": "情報不足",
-        "halfLifeHours": "情報不足",
-        "vdLKg": "情報不足",
-        "proteinBindingPct": "情報不足",
-        "metabolism": "・塩酸接触組織の刺激および謀食 / ・酢酸・消化管および肺から速やかに吸収される. アセチル CoA となり TCA サイクルに / 入り , 組織において CO。と HO に代謝される / 性状・性質",
-        "elimination": "・塩酸接触組織の刺激および謀食 / ・酢酸・消化管および肺から速やかに吸収される. アセチル CoA となり TCA サイクルに / 入り , 組織において CO。と HO に代謝される / 性状・性質"
-      },
-      "treatment": {
-        "antidote": {
-          "name": "要個別確認",
-          "indication": "資料由来の記載を参照して支持療法を判断"
-        },
-        "lavage": {
-          "allow": true,
-          "window_min": 120,
-          "note": "・吸入した場合・新鮮な空気 , 酸素吸入 , 呼吸管理 , 気管内の洗浄と吸引 , 抗生剤とステロ / イドの投与 / ・嚥下した場合 : 催吐と胃洗浄は禁忌 , 吸引排出は可 , 牛乳で希釈洗浄 , 粘膜保護剤 , 高カ"
-        },
-        "charcoal": {
-          "allow": false,
-          "window_min": 120,
-          "extended_window_min": 240,
-          "note": "ロリー輸液 / ・皮膚に接触した場合 : 大量の水で長時間洗浄 , 熱傷処置 / ・眼球に接触した場合 : 大量の生理食塩水や水で長時間洗浄 , 点眼用 FAD と点眼用抗菌剤"
-        },
-        "dialysis": {
-          "effective": false,
-          "indication": "有効性情報なし"
-        },
-        "other": [
-          {
-            "name": "れている",
-            "severity_min": 2,
-            "note": "れている"
-          },
-          {
-            "name": "を始めとして幅広く用いられている",
-            "severity_min": 2,
-            "note": "を始めとして幅広く用いられている"
-          },
-          {
-            "name": "腐食性と浸透性は同一 pH ならば塩酸より強い",
-            "severity_min": 2,
-            "note": "腐食性と浸透性は同一 pH ならば塩酸より強い"
-          },
-          {
-            "name": "3. 工業用品 4) 酸",
-            "severity_min": 2,
-            "note": "3. 工業用品 4) 酸"
-          },
-          {
-            "name": "アルカリ 531",
-            "severity_min": 2,
-            "note": "アルカリ 531"
-          },
-          {
-            "name": "中毒学的薬理作用",
-            "severity_min": 2,
-            "note": "中毒学的薬理作用"
-          },
-          {
-            "name": "蛋白凝固性腐食作用",
-            "severity_min": 2,
-            "note": "蛋白凝固性腐食作用"
-          },
-          {
-            "name": "原形質毒による組織壊死作用",
-            "severity_min": 2,
-            "note": "原形質毒による組織壊死作用"
-          }
-        ]
-      },
-      "analysis": {
-        "recommended_tests": [
-          "循環動態",
-          "呼吸状態"
-        ],
-        "interpretation": "症候・曝露量を総合評価",
-        "notes": "・塩酸 (HCI) : 強酸である . 家庭用品としては主にトイレ用洗浄剤中に約 10% 程度含有きさき / れている / ・酢酸 (CHIl.COOH) : 塩酸と比べるとかなり弱い酸である . 代表的な有機酸であり , 食用 / を始めとして幅広く用いられている"
-      },
-      "evidence": {
-        "source": "ocr_result_1770368005162.txt",
-        "pages": [
-          540,
-          541,
-          542,
-          543,
-          544
-        ],
-        "updated_at": "2026-02-14",
-        "level": "ocr-auto"
-      }
-    },
-    {
       "ingredient_name": "にアンモニア",
       "component": "Ammonia",
       "aliases": [
         "にアンモニア",
         "にアンモニア (Ammonia)",
-        "Ammonia",
-        ": 204"
+        "Ammonia"
       ],
       "product_aliases": [],
       "toxic_threshold_mg_kg": {
@@ -10021,8 +9744,7 @@
       "aliases": [
         "工業用品ケイ酸ナトリロウワム",
         "_ 工業用品ケイ酸ナトリロウワム (odimm silicate)",
-        "odimm silicate",
-        "(4"
+        "odimm silicate"
       ],
       "product_aliases": [
         "セメント急結剤",
@@ -10033,13 +9755,11 @@
         "接苦剤",
         "1) 土山雅人",
         "2) 田中淳介",
-        "他 ",
         "モルタル",
         "3) 田中裕",
         "4) 横瀬智之",
         "田中裕 (大阪大学医学部救急医学)",
         "中毒研究 Vol. 11",
-        "No. 1(1998)",
         "BETE",
         "ImRR",
         "フッ化水素 (ydrofuluoric acid)",
@@ -10048,7 +9768,9 @@
         "フロンガスの原料",
         "ガラスのつや消し",
         "フッ素樹脂中間原料などに使用され",
-        "る毒物である . 工場で使用中あるいは運搬中の事故で"
+        "る毒物である . 工場で使用中あるいは運搬中の事故で",
+        "フッ化水素ガスを吸入したり",
+        "液化し"
       ],
       "toxic_threshold_mg_kg": {
         "caution": 10.0,
@@ -10233,15 +9955,12 @@
       "ingredient_name": "メチルエチルケトソパーオキサイド Mem ethyl ketone peroxide",
       "component": "メチルエチルケトソパーオキサイド Mem ethyl ketone peroxide",
       "aliases": [
-        "メチルエチルケトソパーオキサイド Mem ethyl ketone peroxide",
-        ": (7"
+        "メチルエチルケトソパーオキサイド Mem ethyl ketone peroxide"
       ],
       "product_aliases": [
-        "パーメック $@",
         "カヤメック $",
         "メポックス",
         "ルパゾール %",
-        "サンハード %@",
         "1) メチナルエチルケトンパペパーオキサイド",
         "14102 の化学商品 . 化学工業日報社",
         "東京",
@@ -10392,8 +10111,7 @@
       "ingredient_name": "アジ化ナトリウム odium azide)",
       "component": "アジ化ナトリウム odium azide)",
       "aliases": [
-        "アジ化ナトリウム odium azide)",
-        "(4"
+        "アジ化ナトリウム odium azide)"
       ],
       "product_aliases": [
         "シアン化水素 (青酸)",
@@ -10612,8 +10330,7 @@
       "ingredient_name": "亜塩素酸ナトリウム odium chlorite)",
       "component": "亜塩素酸ナトリウム odium chlorite)",
       "aliases": [
-        "亜塩素酸ナトリウム odium chlorite)",
-        ":(人へ)"
+        "亜塩素酸ナトリウム odium chlorite)"
       ],
       "product_aliases": [
         "液体商品 (10 一 50 %) : カビスケ",
@@ -10839,8 +10556,7 @@
       "component": "剤 1.3 dichloropropene)",
       "aliases": [
         "剤 1.3 dichloropropene)",
-        "D-D 剤 1.3 dichloropropene)",
-        "(人 4"
+        "D-D 剤 1.3 dichloropropene)"
       ],
       "product_aliases": [
         "テロン 92",
@@ -10851,7 +10567,6 @@
         "ネマクロペン",
         "岡田明 (防衛医科大学校病院救急部)",
         "中毒研究 Vol. 11",
-        "No. 2(1998)",
         "“moREES",
         "s fee : ()",
         "語り",
@@ -10865,8 +10580,9 @@
         "ブタ",
         "イヌ",
         "カルドメック % 錠 136",
-        "A$ 錠など",
-        "赤堀文昭 (麻布大学咽医学部薬理学教室)"
+        "赤堀文昭 (麻布大学咽医学部薬理学教室)",
+        "中毒研究 Vol. 12",
+        "ーー本昌 "
       ],
       "toxic_threshold_mg_kg": {
         "caution": 0.005,
@@ -11054,8 +10770,7 @@
       "ingredient_name": "ジチオカーがバメイト剤 Oimiocarbamates)",
       "component": "ジチオカーがバメイト剤 Oimiocarbamates)",
       "aliases": [
-        "ジチオカーがバメイト剤 Oimiocarbamates)",
-        "(人 43)"
+        "ジチオカーがバメイト剤 Oimiocarbamates)"
       ],
       "product_aliases": [
         "ほとんどが水和剤として用いられている .",
@@ -11071,7 +10786,6 @@
         "TMDT)",
         "ニッケルジメチルチオカーバメイト (有機ニッケル)",
         "プロピネブ (アントラュコー",
-        "ル)",
         "ポリカーバメイト (ビスダイセン)",
         "マンゼブ (グリーンダイセン M",
         "ジマンダイセン)",
@@ -11254,13 +10968,11 @@
       "aliases": [
         "上まき ブラストサイジン S",
         "上まき ブラストサイジン S (Blasticidin S)",
-        "Blasticidin S",
-        "(人"
+        "Blasticidin S"
       ],
       "product_aliases": [
         "乳化剤",
         "水など 98%",
-        "タルク 0~50%",
         "クレイ 50~",
         "ブラゼセット粉剤 : BeS-BABSA 0.16%",
         "MAF(有機ヒ素)0.4%"
@@ -11413,8 +11125,7 @@
       "ingredient_name": "用イ = ノクタジン酢酸塩 minoctadine acetate)",
       "component": "用イ = ノクタジン酢酸塩 minoctadine acetate)",
       "aliases": [
-        "用イ = ノクタジン酢酸塩 minoctadine acetate)",
-        "(N)s"
+        "用イ = ノクタジン酢酸塩 minoctadine acetate)"
       ],
       "product_aliases": [
         "イミノクタジン含有量は",
@@ -11428,19 +11139,19 @@
         "フラサイド",
         "ポリオキシン",
         "メプロニルなどとの合",
-        "剤がある .",
         "ベフラン液剤 25(イミノクタジン酢酸塩 25 %",
         "ポリオキシエナチレンアルキルエーテル 5 %%",
         "メタノール 3 2%",
-        "酢酸 1%",
-        "水 66 %)",
         "ベフルール水和剤",
         "ミステラン水和剤",
         "ピーチオガード",
         "水和剤",
         "リゾレックスベフラン水和剤",
         "リゾレックスベフランフロアブル",
-        "リゾレックスベフ"
+        "リゾレックスベフ",
+        "ラン粉剤 DL",
+        "ヤシマラプサイドベワラン粉剤 DL",
+        "三共ラブサイドベフラン粉剤 DL"
       ],
       "toxic_threshold_mg_kg": {
         "caution": 10.0,
@@ -11642,8 +11353,7 @@
       "aliases": [
         "トリ r ン系除草剤",
         "トリ r ン系除草剤 (Triazinic herbicides)",
-        "Triazinic herbicides",
-        ": ®s"
+        "Triazinic herbicides"
       ],
       "product_aliases": [
         "ゲザプリム 50 (アトラジン 47.5%)",
@@ -11659,7 +11369,6 @@
         "との混合剤 (アトラジン 1.1%)",
         "ギーボン粒剤 1.5 (アトラジン 1.52%)",
         "ギーボン粒剤 2.5 (ア",
-        "トラジン 2.52%)",
         "ゲザミル (プロバジン 50%)",
         "ゲザガード 50 (プロメトリン 50%)",
         "ゲザガー",
@@ -11669,7 +11378,8 @@
         "ジジ 50%)",
         "ジマジジシフセアプル (ジマジン 428)",
         "シマジジ鐘剤 (シマジンシン 1%)",
-        "シマジンシ"
+        "シマジンシ",
+        "粒剤 2 (シマジン 2%)"
       ],
       "toxic_threshold_mg_kg": {
         "caution": 50.0,
@@ -11848,15 +11558,10 @@
       "ingredient_name": "ニニド和回ウエモエツジ / ール剤 Oinitrophenol)",
       "component": "ニニド和回ウエモエツジ / ール剤 Oinitrophenol)",
       "aliases": [
-        "ニニド和回ウエモエツジ / ール剤 Oinitrophenol)",
-        "(へ)"
+        "ニニド和回ウエモエツジ / ール剤 Oinitrophenol)"
       ],
       "product_aliases": [
-        "we",
         "me のーー mW weazgl",
-        "[pme ェグミたりー",
-        "クト [wen eweiwa]",
-        "LT",
         "に 2 誠症症間間間間症呈し"
       ],
       "toxic_threshold_mg_kg": {
@@ -12024,17 +11729,14 @@
       "ingredient_name": "ナナノキシ系剤 The chlorophenoxy herbicides)",
       "component": "ナナノキシ系剤 The chlorophenoxy herbicides)",
       "aliases": [
-        "ナナノキシ系剤 The chlorophenoxy herbicides)",
-        "(へ 4"
+        "ナナノキシ系剤 The chlorophenoxy herbicides)"
       ],
       "product_aliases": [
-        "MCP ¥=271)—>M",
         "MCPB トロポトックス",
         "MCPB",
         "MCPP ウィードコロン",
         "MCPP",
         "4PB ローンキープ",
-        "2.4-D",
         "クタサノン (合剤)",
         "アメリカヵ軍がベトナム戦争の際に",
         "枯葉剤として使用した「オレンジ」剤は 2",
@@ -12043,7 +11745,6 @@
         "前者は 1975 年に失効している",
         "(防衛医科大学校病院救急部)",
         "中毒研究 Vol. 9",
-        "No. 1(1996)",
         "4. 農薬 3) 除草剤 597"
       ],
       "toxic_threshold_mg_kg": {
@@ -12213,8 +11914,7 @@
       "aliases": [
         "ペンタクロロロフェノール",
         "ペンタクロロロフェノール (11entachlorophenol)",
-        "11entachlorophenol",
-        "4 Cllds *)"
+        "11entachlorophenol"
       ],
       "product_aliases": [
         "ンダウジエーダウイオザイ過エントテラルトザキウェン",
@@ -12429,12 +12129,10 @@
       "aliases": [
         "尿素系除草剤",
         "尿素系除草剤 (Urea-substituted herbicides)",
-        "Urea-substituted herbicides",
-        "(3"
+        "Urea-substituted herbicides"
       ],
       "product_aliases": [
         "クサノン AA 乳剤 % : DCPA 25 %",
-        "NAC5%",
         "キシレン 60 2%",
         "界面活性剤 10% を含有",
         "有機溶媒臭が著明で",
@@ -12456,7 +12154,8 @@
         "1) 中毒情報データシステム Ver 6.0.",
         "2) 大橋教良",
         "中毒研究 1996:9:437-40.",
-        "3) 辻川明子"
+        "3) 辻川明子",
+        "月刊薬事 1997: 39 : 2079-82."
       ],
       "toxic_threshold_mg_kg": {
         "caution": 0.5,
@@ -12643,8 +12342,7 @@
       "aliases": [
         "クロルピクリン",
         "クロルピクリン (hloropicrin)",
-        "hloropicrin",
-        "(ぷ)。"
+        "hloropicrin"
       ],
       "product_aliases": [
         "カヤククロールピクリン",
@@ -12655,7 +12353,6 @@
         "マクロペン油剤など",
         "(防衛医科大学校病院救急部)",
         "中毒研究 Vol. 8",
-        "No. 3(1995)",
         "4. 農薬 4) EE 605"
       ],
       "toxic_threshold_mg_kg": {
@@ -12841,8 +12538,7 @@
       "ingredient_name": "臭化メチル etnyi bromide)",
       "component": "臭化メチル etnyi bromide)",
       "aliases": [
-        "臭化メチル etnyi bromide)",
-        "20。"
+        "臭化メチル etnyi bromide)"
       ],
       "product_aliases": [
         "2F7ar K2(BWAAN)",
@@ -12859,7 +12555,6 @@
         "3) 佐藤重仁",
         "松宮直樹 (土浦協同病院麻酔科)",
         "中毒研究 Vol. 10",
-        "No. 3(1997)",
         "4. 農薬 5) 殺衛剤 60Z",
         "pr— SBERE) (Thaliom",
         "タリウム (殺記剤) \"aw —",
@@ -12868,7 +12563,8 @@
         "わが国で市販さきれている製剤",
         "は硫酸タリウムである .",
         "タリウムは皮膚",
-        "る ."
+        "今日",
+        "他の物質 (例えばクマリン製剤) に置き代ちられ"
       ],
       "toxic_threshold_mg_kg": {
         "caution": 6.0,
@@ -13061,8 +12757,7 @@
       "aliases": [
         "黄リョググ",
         "黄リョググ (FZERH) (Yellow phosphorus)",
-        "FZERH",
-        "20。"
+        "FZERH"
       ],
       "product_aliases": [
         "黄リン殺肌剤には固形あるいは交状のものがあり",
@@ -13074,9 +12769,7 @@
         "光発生をおさえてある",
         "大橋教良 (筑波メディカルセンター病院救急部)",
         "中毒研究 Vol. 9",
-        "No. 3(1996)",
         "4. 農薬 5) BEH 613",
-        "殺有剤 ui ou [",
         "避するネズミに対して",
         "作用の発現が速く",
         "持続を期待し",
@@ -13088,7 +12781,9 @@
         "インダン -1",
         "3- ジオン) 殺ソ剤にわけられる . いずれ",
         "もワルファリンに比べ水次性の高いもので",
-        "ワルファリン同様抗凝血作用を示してネズミを死"
+        "ワルファリン同様抗凝血作用を示してネズミを死",
+        "にいたらしめる .",
+        "長時間作用型殺ソ剤の一部は"
       ],
       "toxic_threshold_mg_kg": {
         "caution": 0.007,
@@ -13279,8 +12974,7 @@
       "ingredient_name": "トリカブト Wonkshnood, Wolfsbane, Aconite)",
       "component": "トリカブト Wonkshnood, Wolfsbane, Aconite)",
       "aliases": [
-        "トリカブト Wonkshnood, Wolfsbane, Aconite)",
-        ": @g"
+        "トリカブト Wonkshnood, Wolfsbane, Aconite)"
       ],
       "product_aliases": [],
       "toxic_threshold_mg_kg": {
@@ -13456,8 +13150,7 @@
       "aliases": [
         "ル E チョジグ /",
         "ル E チョジグ / (Colchicine)",
-        "Colchicine",
-        ": 20."
+        "Colchicine"
       ],
       "product_aliases": [
         "コルヒナチン酸",
@@ -13651,8 +13344,7 @@
       "component": "抗コリン作用植物",
       "aliases": [
         "抗コリン作用植物",
-        "anm 抗コリン作用植物 (\" nticholinergic plants",
-        "Eytome1e) ="
+        "anm 抗コリン作用植物 (\" nticholinergic plants"
       ],
       "product_aliases": [],
       "toxic_threshold_mg_kg": {
@@ -13828,8 +13520,7 @@
       "aliases": [
         "シキミ . モクレン科",
         "Enm シキミ . モクレン科 (Tllicium anisatum, Linnae)",
-        "Tllicium anisatum, Linnae",
-        "(人"
+        "Tllicium anisatum, Linnae"
       ],
       "product_aliases": [],
       "toxic_threshold_mg_kg": {
@@ -13994,8 +13685,7 @@
       "ingredient_name": "ヒガンバナ科植物 Amaryllidaceae group plants)",
       "component": "ヒガンバナ科植物 Amaryllidaceae group plants)",
       "aliases": [
-        "ヒガンバナ科植物 Amaryllidaceae group plants)",
-        ": (3"
+        "ヒガンバナ科植物 Amaryllidaceae group plants)"
       ],
       "product_aliases": [],
       "toxic_threshold_mg_kg": {
@@ -14150,8 +13840,7 @@
       "ingredient_name": "サトイモ科植物ふ raceaes group plants)",
       "component": "サトイモ科植物ふ raceaes group plants)",
       "aliases": [
-        "サトイモ科植物ふ raceaes group plants)",
-        "(き)s"
+        "サトイモ科植物ふ raceaes group plants)"
       ],
       "product_aliases": [],
       "toxic_threshold_mg_kg": {
@@ -14711,8 +14400,7 @@
       "aliases": [
         "INTJIRRE",
         "INTJIRRE (Habu snake bite)",
-        "Habu snake bite",
-        "(の"
+        "Habu snake bite"
       ],
       "product_aliases": [],
       "toxic_threshold_mg_kg": {
@@ -14902,8 +14590,7 @@
       "aliases": [
         "ヤマカ FIRGE",
         "ヤマカ FIRGE (Yamakagashi snake bite)",
-        "Yamakagashi snake bite",
-        "20"
+        "Yamakagashi snake bite"
       ],
       "product_aliases": [],
       "toxic_threshold_mg_kg": {
@@ -15073,8 +14760,7 @@
       "aliases": [
         "旧作魚刺傷",
         "旧作魚刺傷 ( Fish sting)",
-        "Fish sting",
-        "+ ォュセ ON y ®s"
+        "Fish sting"
       ],
       "product_aliases": [
         "日本近海ではカサゴ科のオコゼ",
@@ -15087,10 +14773,8 @@
         "ゴンズイ",
         "ギンザッなど",
         "日本では奄美諸島以南に分",
-        "#i",
         "石沢淳子 ((財) 日本中毒情報センター)",
         "中毒研究 Vol. 9",
-        "No. 3(1996)",
         "5. 自然毒 3) 動物毒琴刺傷 657"
       ],
       "toxic_threshold_mg_kg": {
@@ -15256,8 +14940,7 @@
       "ingredient_name": "膝腸動物による刺傷 Sings of coelenterates)",
       "component": "膝腸動物による刺傷 Sings of coelenterates)",
       "aliases": [
-        "膝腸動物による刺傷 Sings of coelenterates)",
-        "(ご)"
+        "膝腸動物による刺傷 Sings of coelenterates)"
       ],
       "product_aliases": [],
       "toxic_threshold_mg_kg": {
@@ -15450,8 +15133,7 @@
       "ingredient_name": "麻痺性内毒 \"Paraytic shellfish poison)",
       "component": "麻痺性内毒 \"Paraytic shellfish poison)",
       "aliases": [
-        "麻痺性内毒 \"Paraytic shellfish poison)",
-        ": 202.,"
+        "麻痺性内毒 \"Paraytic shellfish poison)"
       ],
       "product_aliases": [],
       "toxic_threshold_mg_kg": {
@@ -15587,8 +15269,7 @@
       "component": "ツブ毒のリッ intersculpta なり",
       "aliases": [
         "ツブ毒のリッ intersculpta なり",
-        "EL ツブ毒のリッ intersculpta なり",
-        "© Gr-, O) 4 リ"
+        "EL ツブ毒のリッ intersculpta なり"
       ],
       "product_aliases": [],
       "toxic_threshold_mg_kg": {
@@ -15706,187 +15387,6 @@
           678,
           679,
           680
-        ],
-        "updated_at": "2026-02-14",
-        "level": "ocr-auto"
-      }
-    },
-    {
-      "ingredient_name": "バイ =",
-      "component": "Ivory shell",
-      "aliases": [
-        "バイ =",
-        "B#E バイ = (Ivory shell)",
-        "Ivory shell",
-        "(8"
-      ],
-      "product_aliases": [],
-      "toxic_threshold_mg_kg": {
-        "caution": null,
-        "toxic": null,
-        "severe": null,
-        "critical": null
-      },
-      "symptoms": [
-        "覚障害を主症状とする沼津型と",
-        "腹部症状を主症状とする寺泊型の二こつのタイプがある \"の.",
-        "1 沼津型",
-        "視神経症状視力減退",
-        "瞳孔散大",
-        "mm",
-        "n",
-        "mmew",
-        "wH",
-        "wR wE",
-        "[2ok —i[o[weme 1ux odRew waE",
-        "2 寺泊型",
-        "消化器症状激しい腹痛",
-        "嘔吐",
-        "下痢",
-        "maak olmmogs gas",
-        "mes Jo[rre —————]",
-        "hE RE",
-        "WAH",
-        "WAET",
-        "を認めていない . 潜伏時間はおよそ 10~22 時間 (1957 年)",
-        "中毒学的薬理作用",
-        "沼津型",
-        " フグ毒 (テトロドトキシン) のように"
-      ],
-      "critical_symptoms": [
-        "意識障害",
-        "昏睡",
-        "痙攣"
-      ],
-      "symptom_timeline": [
-        {
-          "window": "0-2時間",
-          "symptoms": [
-            "覚障害を主症状とする沼津型と",
-            "腹部症状を主症状とする寺泊型の二こつのタイプがある \"の.",
-            "1 沼津型",
-            "視神経症状視力減退"
-          ],
-          "red_flags": [
-            "意識障害",
-            "昏睡"
-          ]
-        },
-        {
-          "window": "2-8時間",
-          "symptoms": [
-            "1 沼津型",
-            "視神経症状視力減退",
-            "瞳孔散大",
-            "mm",
-            "n",
-            "mmew"
-          ],
-          "red_flags": [
-            "意識障害",
-            "昏睡",
-            "痙攣"
-          ]
-        },
-        {
-          "window": "8時間以降",
-          "symptoms": [
-            "意識障害",
-            "昏睡",
-            "痙攣"
-          ],
-          "red_flags": [
-            "意識障害",
-            "昏睡",
-            "痙攣"
-          ]
-        }
-      ],
-      "toxicokinetics": {
-        "tmaxHours": "情報不足",
-        "halfLifeHours": "情報不足",
-        "vdLKg": "情報不足",
-        "proteinBindingPct": "情報不足",
-        "metabolism": "情報不足",
-        "elimination": "情報不足"
-      },
-      "treatment": {
-        "antidote": {
-          "name": "要個別確認",
-          "indication": "資料由来の記載を参照して支持療法を判断"
-        },
-        "lavage": {
-          "allow": false,
-          "window_min": 120,
-          "note": "・療貫 , 意識障害などを認める場合には , 気道の確保 , 必要であれば人工呼吸 / ・下痢 , 嘔吐が続く場合には , 電解質の異常に注意しながら輪液を行う / 中毒研究 Vol. 15, No. 3(2002)"
-        },
-        "charcoal": {
-          "allow": false,
-          "window_min": 120,
-          "extended_window_min": 240,
-          "note": "資料記載を参照"
-        },
-        "dialysis": {
-          "effective": false,
-          "indication": "有効性情報なし"
-        },
-        "other": [
-          {
-            "name": "食事歴によって推祭することが重要",
-            "severity_min": 2,
-            "note": "食事歴によって推祭することが重要"
-          },
-          {
-            "name": "より容易に診断が可能である",
-            "severity_min": 2,
-            "note": "より容易に診断が可能である"
-          },
-          {
-            "name": "視力低下は",
-            "severity_min": 2,
-            "note": "視力低下は"
-          },
-          {
-            "name": "沼津型中毒の最初にみられる症状である",
-            "severity_min": 2,
-            "note": "沼津型中毒の最初にみられる症状である"
-          },
-          {
-            "name": "激しい腹痛",
-            "severity_min": 2,
-            "note": "激しい腹痛"
-          },
-          {
-            "name": "下痢は寺泊型中毒の初期症状であるが",
-            "severity_min": 2,
-            "note": "下痢は寺泊型中毒の初期症状であるが"
-          },
-          {
-            "name": "後に四肢の決綿",
-            "severity_min": 2,
-            "note": "後に四肢の決綿"
-          },
-          {
-            "name": "意識障害な",
-            "severity_min": 2,
-            "note": "意識障害な"
-          }
-        ]
-      },
-      "analysis": {
-        "recommended_tests": [
-          "電解質",
-          "循環動態",
-          "呼吸状態"
-        ],
-        "interpretation": "・食事歴によって推祭することが重要 / ・共同の食事を摂取後多数の患者がでた場合には , より容易に診断が可能である / ・視力低下は , 沼津型中毒の最初にみられる症状である",
-        "notes": "・沼津型中毒の原因として , 当初スルガトキシン (surugatoxin, SGTX) が単離されていた / が , その後薬理作用が著しく強いネオスルガトキシン (neosurugatoxin, neoSGTX) が単 / 離されている / ・寺泊型中毒の原因物質は確定していない"
-      },
-      "evidence": {
-        "source": "ocr_result_1770368005162.txt",
-        "pages": [
-          680,
-          681
         ],
         "updated_at": "2026-02-14",
         "level": "ocr-auto"
